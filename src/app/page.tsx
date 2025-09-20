@@ -8,8 +8,9 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const [healthStatus, setHealthStatus] = useState<{
     status: string;
-    timestamp: string;
-    environment: Record<string, string>;
+    timestamp?: string;
+    environment?: Record<string, string>;
+    message?: string;
   } | null>(null);
 
   useEffect(() => {
