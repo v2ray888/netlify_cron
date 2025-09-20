@@ -45,8 +45,8 @@ export default function DashboardPage() {
           throw new Error("获取任务失败");
         }
         const data = await response.json();
-        setTasks(data.tasks);
-        setTotalTasks(data.totalTasks);
+        setTasks(data.tasks || []);
+        setTotalTasks(data.totalTasks || 0);
       } catch (err) {
         setError(err instanceof Error ? err.message : "获取任务失败");
       } finally {
@@ -126,7 +126,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
-              {tasks.length > 0 ? (
+              {tasks && tasks.length > 0 ? (
                 tasks.map((task) => (
                   <tr key={task.id}>
                     <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{task.name}</td>
