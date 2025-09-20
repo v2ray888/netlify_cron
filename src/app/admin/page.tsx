@@ -128,7 +128,13 @@ export default function AdminPage() {
           <h2 className="mb-4 text-2xl font-semibold text-gray-800">User Management</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              {/* ... table head ... */}
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Role</th>
+                  <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+                </tr>
+              </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {users.map((user) => (
                   <tr key={user.id}>

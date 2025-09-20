@@ -1,10 +1,13 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
 
 // Update user role
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || session.user.role !== 'admin') {
@@ -12,7 +15,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const { role } = await request.json();
 
     if (!['user', 'admin'].includes(role)) {
@@ -32,7 +35,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // Delete user
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || session.user.role !== 'admin') {
@@ -40,19 +46,28 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     if (id === session.user.id) {
-        return NextResponse.json({ message: 'Cannot delete your own account' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'Cannot delete your own account' },
+        { status: 400 }
+      );
     }
 
     await prisma.user.delete({
       where: { id },
     });
 
-    return NextResponse.json({ message: 'User deleted successfully' }, { status: 200 });
+    return NextResponse.json(
+      { message: 'User deleted successfully' },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error deleting user:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
