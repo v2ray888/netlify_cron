@@ -148,7 +148,57 @@ export default function AdminPage() {
         {/* Task Management */}
         <div className="rounded-lg bg-white p-6 shadow-md">
           <h2 className="mb-4 text-2xl font-semibold text-gray-800">All Tasks</h2>
-          {/* ... task table ... */}
+          {loading ? (
+            <p>Loading tasks...</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">URL</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Interval (min)</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Owner</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Last Run</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Next Run</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {tasks.length > 0 ? (
+                    tasks.map((task) => (
+                      <tr key={task.id}>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{task.url}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.intervalMin}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                          <span className={`rounded-full px-2 py-1 text-xs font-semibold ${task.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                            {task.active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.user.email}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.lastRun ? new Date(task.lastRun).toLocaleString() : "N/A"}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.nextRun ? new Date(task.nextRun).toLocaleString() : "N/A"}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-gray-500">No tasks found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              {totalTaskPages > 1 && (
+                <div className="mt-4 flex items-center justify-between">
+                  <button onClick={() => setTaskPage((p) => Math.max(1, p - 1))} disabled={taskPage === 1} className="rounded-md border bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-700">Page {taskPage} of {totalTaskPages}</span>
+                  <button onClick={() => setTaskPage((p) => Math.min(totalTaskPages, p + 1))} disabled={taskPage === totalTaskPages} className="rounded-md border bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

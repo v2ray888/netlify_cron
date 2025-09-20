@@ -1,18 +1,24 @@
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
 
+interface RouteContext {
+  params: {
+    id: string;
+  };
+}
+
 // Update user role
-export async function PUT(request: Request, context: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: RouteContext) {
   const session = await getServerSession(authOptions);
 
-  if (!session || !session.user || session.user.role !== 'admin') {
+  if (!session?.user || session.user.role !== 'admin') {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const { id } = context.params;
+    const { id } = params;
     const { role } = await request.json();
 
     if (!['user', 'admin'].includes(role)) {
@@ -32,15 +38,15 @@ export async function PUT(request: Request, context: { params: { id: string } })
 }
 
 // Delete user
-export async function DELETE(request: Request, context: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const session = await getServerSession(authOptions);
 
-  if (!session || !session.user || session.user.role !== 'admin') {
+  if (!session?.user || session.user.role !== 'admin') {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const { id } = context.params;
+    const { id } = params;
 
     if (id === session.user.id) {
         return NextResponse.json({ message: 'Cannot delete your own account' }, { status: 400 });
