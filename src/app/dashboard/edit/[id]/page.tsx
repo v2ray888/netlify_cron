@@ -8,6 +8,7 @@ export default function EditTaskPage({ params }: { params: Promise<{ id: string 
   const [id, setId] = useState<string>("");
   const router = useRouter();
 
+  const [name, setName] = useState("");
   const [targetUrl, setTargetUrl] = useState("");
   const [frequencyMinutes, setFrequencyMinutes] = useState(5);
   const [isEnabled, setIsEnabled] = useState(true);
@@ -31,6 +32,7 @@ export default function EditTaskPage({ params }: { params: Promise<{ id: string 
           throw new Error("Failed to fetch task data");
         }
         const data = await response.json();
+        setName(data.name);
         setTargetUrl(data.targetUrl);
         setFrequencyMinutes(data.frequencyMinutes);
         setIsEnabled(data.isEnabled);
@@ -51,7 +53,7 @@ export default function EditTaskPage({ params }: { params: Promise<{ id: string 
       const response = await fetch(`/api/tasks/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl, frequencyMinutes, isEnabled }),
+        body: JSON.stringify({ name, targetUrl, frequencyMinutes, isEnabled }),
       });
 
       if (!response.ok) {
@@ -66,16 +68,27 @@ export default function EditTaskPage({ params }: { params: Promise<{ id: string 
   };
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center">Loading task...</div>;
+    return <div className="flex min-h-screen items-center justify-center">加载任务中...</div>;
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-lg rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-center text-3xl font-bold text-gray-900">Edit Task</h1>
+        <h1 className="mb-6 text-center text-3xl font-bold text-gray-900">编辑任务</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-700">Target URL</label>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">任务名称</label>
+            <input
+              id="name"
+              type="text"
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-700">目标URL</label>
             <input
               id="targetUrl"
               type="url"
@@ -86,7 +99,7 @@ export default function EditTaskPage({ params }: { params: Promise<{ id: string 
             />
           </div>
           <div>
-            <label htmlFor="frequencyMinutes" className="block text-sm font-medium text-gray-700">Frequency (in minutes)</label>
+            <label htmlFor="frequencyMinutes" className="block text-sm font-medium text-gray-700">执行频率（分钟）</label>
             <input
               id="frequencyMinutes"
               type="number"
@@ -105,20 +118,20 @@ export default function EditTaskPage({ params }: { params: Promise<{ id: string 
               checked={isEnabled}
               onChange={(e) => setIsEnabled(e.target.checked)}
             />
-            <label htmlFor="isEnabled" className="ml-2 block text-sm text-gray-900">Task is Enabled</label>
+            <label htmlFor="isEnabled" className="ml-2 block text-sm text-gray-900">启用任务</label>
           </div>
           
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-              Cancel
+              取消
             </Link>
             <button
               type="submit"
               className="justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >
-              Update Task
+              更新任务
             </button>
           </div>
         </form>

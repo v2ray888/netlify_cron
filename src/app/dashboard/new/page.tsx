@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function NewTaskPage() {
-  const [url, setUrl] = useState("");
-  const [intervalMin, setIntervalMin] = useState(5);
+  const [name, setName] = useState("");
+  const [targetUrl, setTargetUrl] = useState("");
+  const [frequencyMinutes, setFrequencyMinutes] = useState(5);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -14,12 +15,16 @@ export default function NewTaskPage() {
     e.preventDefault();
     setError("");
 
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      setError("Please enter a valid URL starting with http:// or https://");
+    if (!name.trim()) {
+      setError("请输入任务名称");
       return;
     }
-    if (intervalMin < 1) {
-      setError("Interval must be at least 1 minute.");
+    if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+      setError("请输入有效的URL，以 http:// 或 https:// 开头");
+      return;
+    }
+    if (frequencyMinutes < 1) {
+      setError("执行频率至少为1分钟");
       return;
     }
 
@@ -27,7 +32,7 @@ export default function NewTaskPage() {
       const response = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, intervalMin }),
+        body: JSON.stringify({ name, targetUrl, frequencyMinutes }),
       });
 
       if (!response.ok) {
@@ -44,30 +49,42 @@ export default function NewTaskPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-lg rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-center text-3xl font-bold text-gray-900">Create New Task</h1>
+        <h1 className="mb-6 text-center text-3xl font-bold text-gray-900">创建新任务</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="url" className="block text-sm font-medium text-gray-700">Target URL</label>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">任务名称</label>
             <input
-              id="url"
+              id="name"
+              type="text"
+              placeholder="我的定时任务"
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-700">目标URL</label>
+            <input
+              id="targetUrl"
               type="url"
               placeholder="https://example.com"
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              value={targetUrl}
+              onChange={(e) => setTargetUrl(e.target.value)}
             />
           </div>
           <div>
-            <label htmlFor="intervalMin" className="block text-sm font-medium text-gray-700">Interval (in minutes)</label>
+            <label htmlFor="frequencyMinutes" className="block text-sm font-medium text-gray-700">执行频率（分钟）</label>
             <input
-              id="intervalMin"
+              id="frequencyMinutes"
               type="number"
               required
               min="1"
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              value={intervalMin}
-              onChange={(e) => setIntervalMin(parseInt(e.target.value, 10))}
+              value={frequencyMinutes}
+              onChange={(e) => setFrequencyMinutes(parseInt(e.target.value, 10))}
             />
           </div>
           
@@ -75,13 +92,13 @@ export default function NewTaskPage() {
 
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-              Cancel
+              取消
             </Link>
             <button
               type="submit"
               className="justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >
-              Create Task
+              创建任务
             </button>
           </div>
         </form>
