@@ -1,36 +1,52 @@
 import prisma from '@/lib/prisma';
-import { Task } from '@prisma/client';
 
 /**
  * Executes a single task.
- * @param task The task object from the database.
+ * @param taskId The task ID to execute.
  */
-export async function executeTask(task: Task) {
+export async function executeTask(taskId: string) {
+  // Fetch the task from database
+  const task = await prisma.task.findUnique({
+    where: { id: taskId }
+  });
+
+  if (!task) {
+    throw new Error(`Task with ID ${taskId} not found`);
+  }
   const now = new Date();
 
-  if (!task.active) {
-    console.log(`Task ${task.id} is not active. Skipping execution.`);
+  if (!task.isEnabled) {
+    console.log(`Task ${task.id} is not enabled. Skipping execution.`);
     return;
   }
 
   let status = 'success';
-  let message = `Successfully accessed ${task.url}`;
+  let errorMessage: string | null = null;
   let httpStatusCode: number | null = null;
   const startTime = process.hrtime.bigint();
 
   try {
-    console.log(`Executing task for URL: ${task.url}`);
-    const response = await fetch(task.url, { method: 'GET', redirect: 'follow', timeout: 30000 }); // 30s timeout
+    console.log(`Executing task for URL: ${task.targetUrl}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    
+    const response = await fetch(task.targetUrl, { 
+      method: 'GET', 
+      redirect: 'follow',
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
     httpStatusCode = response.status;
 
     if (!response.ok) {
       status = 'failed';
-      message = `HTTP Error: ${response.status} ${response.statusText}`;
+      errorMessage = `HTTP Error: ${response.status} ${response.statusText}`;
     }
   } catch (error) {
     console.error(`Error executing task ${task.id}:`, error);
     status = 'failed';
-    message = error instanceof Error ? error.message : 'Unknown error during fetch';
+    errorMessage = error instanceof Error ? error.message : 'Unknown error during fetch';
   }
 
   const endTime = process.hrtime.bigint();
@@ -42,24 +58,24 @@ export async function executeTask(task: Task) {
       data: {
         taskId: task.id,
         status,
-        message,
+        errorMessage,
         httpStatusCode,
         responseTimeMs,
       },
     });
 
     // Update the task's last run time and calculate the next run time
-    const nextRun = new Date(now.getTime() + task.intervalMin * 60 * 1000);
+    const nextExecutionAt = new Date(now.getTime() + task.frequencyMinutes * 60 * 1000);
 
     await prisma.task.update({
       where: { id: task.id },
       data: {
-        lastRun: now,
-        nextRun: nextRun,
+        lastExecutedAt: now,
+        nextExecutionAt: nextExecutionAt,
       },
     });
 
-    console.log(`Task ${task.id} finished. Status: ${status}. Next run: ${nextRun.toISOString()}`);
+    console.log(`Task ${task.id} finished. Status: ${status}. Next run: ${nextExecutionAt.toISOString()}`);
   } catch (dbError) {
     console.error(`Failed to log or update task ${task.id} in DB:`, dbError);
   }

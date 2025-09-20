@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
 // Get a specific task
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
@@ -12,7 +12,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const task = await prisma.task.findUnique({
       where: { id, userId: session.user.id },
     });
@@ -23,13 +23,13 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     return NextResponse.json(task, { status: 200 });
   } catch (error) {
-    console.error(`Error fetching task ${params.id}:`, error);
+    console.error(`Error fetching task:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 // Update a task
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
@@ -37,11 +37,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
   try {
-    const { id } = params;
-    const { url, intervalMin, active } = await request.json();
+    const { id } = await params;
+    const { targetUrl, frequencyMinutes, isEnabled } = await request.json();
 
-    if (!url || !intervalMin) {
-      return NextResponse.json({ message: 'URL and interval are required' }, { status: 400 });
+    if (!targetUrl || !frequencyMinutes) {
+      return NextResponse.json({ message: 'Target URL and frequency are required' }, { status: 400 });
     }
 
     const task = await prisma.task.findUnique({
@@ -53,27 +53,27 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
     
     const now = new Date();
-    const nextRun = new Date(now.getTime() + intervalMin * 60 * 1000);
+    const nextExecutionAt = new Date(now.getTime() + frequencyMinutes * 60 * 1000);
 
     const updatedTask = await prisma.task.update({
       where: { id },
       data: {
-        url,
-        intervalMin: parseInt(intervalMin, 10),
-        active,
-        nextRun,
+        targetUrl,
+        frequencyMinutes: parseInt(frequencyMinutes, 10),
+        isEnabled,
+        nextExecutionAt,
       },
     });
 
     return NextResponse.json(updatedTask, { status: 200 });
   } catch (error) {
-    console.error(`Error updating task ${params.id}:`, error);
+    console.error(`Error updating task:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 // Delete a task
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
@@ -81,7 +81,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     
     const task = await prisma.task.findUnique({
         where: { id, userId: session.user.id },
@@ -97,7 +97,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     return NextResponse.json({ message: 'Task deleted successfully' }, { status: 200 });
   } catch (error) {
-    console.error(`Error deleting task ${params.id}:`, error);
+    console.error(`Error deleting task:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

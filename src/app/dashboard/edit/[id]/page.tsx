@@ -4,17 +4,26 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function EditTaskPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function EditTaskPage({ params }: { params: Promise<{ id: string }> }) {
+  const [id, setId] = useState<string>("");
   const router = useRouter();
 
-  const [url, setUrl] = useState("");
-  const [intervalMin, setIntervalMin] = useState(5);
-  const [active, setActive] = useState(true);
+  const [targetUrl, setTargetUrl] = useState("");
+  const [frequencyMinutes, setFrequencyMinutes] = useState(5);
+  const [isEnabled, setIsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const initializeParams = async () => {
+      const resolvedParams = await params;
+      setId(resolvedParams.id);
+    };
+    initializeParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (!id) return;
     const fetchTask = async () => {
       try {
         const response = await fetch(`/api/tasks/${id}`);
@@ -22,9 +31,9 @@ export default function EditTaskPage({ params }: { params: { id: string } }) {
           throw new Error("Failed to fetch task data");
         }
         const data = await response.json();
-        setUrl(data.url);
-        setIntervalMin(data.intervalMin);
-        setActive(data.active);
+        setTargetUrl(data.targetUrl);
+        setFrequencyMinutes(data.frequencyMinutes);
+        setIsEnabled(data.isEnabled);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load task");
       } finally {
@@ -42,7 +51,7 @@ export default function EditTaskPage({ params }: { params: { id: string } }) {
       const response = await fetch(`/api/tasks/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, intervalMin, active }),
+        body: JSON.stringify({ targetUrl, frequencyMinutes, isEnabled }),
       });
 
       if (!response.ok) {
@@ -66,37 +75,37 @@ export default function EditTaskPage({ params }: { params: { id: string } }) {
         <h1 className="mb-6 text-center text-3xl font-bold text-gray-900">Edit Task</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="url" className="block text-sm font-medium text-gray-700">Target URL</label>
+            <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-700">Target URL</label>
             <input
-              id="url"
+              id="targetUrl"
               type="url"
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              value={targetUrl}
+              onChange={(e) => setTargetUrl(e.target.value)}
             />
           </div>
           <div>
-            <label htmlFor="intervalMin" className="block text-sm font-medium text-gray-700">Interval (in minutes)</label>
+            <label htmlFor="frequencyMinutes" className="block text-sm font-medium text-gray-700">Frequency (in minutes)</label>
             <input
-              id="intervalMin"
+              id="frequencyMinutes"
               type="number"
               required
               min="1"
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              value={intervalMin}
-              onChange={(e) => setIntervalMin(parseInt(e.target.value, 10))}
+              value={frequencyMinutes}
+              onChange={(e) => setFrequencyMinutes(parseInt(e.target.value, 10))}
             />
           </div>
           <div className="flex items-center">
             <input
-              id="active"
+              id="isEnabled"
               type="checkbox"
               className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              checked={active}
-              onChange={(e) => setActive(e.target.checked)}
+              checked={isEnabled}
+              onChange={(e) => setIsEnabled(e.target.checked)}
             />
-            <label htmlFor="active" className="ml-2 block text-sm text-gray-900">Task is Active</label>
+            <label htmlFor="isEnabled" className="ml-2 block text-sm text-gray-900">Task is Enabled</label>
           </div>
           
           {error && <p className="text-sm text-red-600">{error}</p>}
