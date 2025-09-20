@@ -3,14 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
 
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
-
 // Update user role
-export async function PUT(request: NextRequest, { params }: RouteContext) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || session.user.role !== 'admin') {
@@ -38,7 +32,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 }
 
 // Delete user
-export async function DELETE(request: NextRequest, { params }: RouteContext) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || session.user.role !== 'admin') {
