@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-// This interface now matches the Prisma model for Task
+// 任务接口定义，匹配 Prisma 模型
 interface Task {
   id: string;
   name: string;
@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Pagination state
+  // 分页状态
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalTasks, setTotalTasks] = useState(0);
@@ -42,13 +42,13 @@ export default function DashboardPage() {
       try {
         const response = await fetch(`/api/tasks?page=${page}&pageSize=${pageSize}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch tasks");
+          throw new Error("获取任务失败");
         }
         const data = await response.json();
         setTasks(data.tasks);
         setTotalTasks(data.totalTasks);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch tasks");
+        setError(err instanceof Error ? err.message : "获取任务失败");
       } finally {
         setLoading(false);
       }
@@ -66,11 +66,11 @@ export default function DashboardPage() {
       const response = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || "Failed to delete task");
+        throw new Error(data.message || "删除任务失败");
       }
-      fetchTasks(); // Refresh the task list
+      fetchTasks(); // 刷新任务列表
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete task");
+      setError(err instanceof Error ? err.message : "删除任务失败");
     }
   };
 
@@ -81,10 +81,10 @@ export default function DashboardPage() {
       const response = await fetch(`/api/tasks/${taskId}/execute`, { method: "POST" });
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || "Failed to execute task");
+        throw new Error(data.message || "执行任务失败");
       }
       alert("任务执行成功触发！");
-      fetchTasks(); // Refresh to show updated run times
+      fetchTasks(); // 刷新以显示更新的执行时间
     } catch (err) {
       alert(err instanceof Error ? err.message : "执行任务失败");
     }
@@ -148,7 +148,7 @@ export default function DashboardPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-500">暂无任务。</td>
+                  <td colSpan={7} className="py-8 text-center text-gray-500">暂无任务。点击"新建任务"开始创建您的第一个定时任务。</td>
                 </tr>
               )}
             </tbody>
