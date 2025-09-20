@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 定时任务管理系统
 
-## Getting Started
+一个基于 Next.js 15 的定时任务管理系统，支持用户注册登录后添加定时访问网站的任务。
 
-First, run the development server:
+## 功能特性
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- 🔐 用户注册和登录系统
+- ⏰ 创建和管理定时任务
+- 🎯 自定义访问频率（分钟级别）
+- 📊 任务执行历史记录
+- 👨‍💼 管理员面板
+- 🔄 自动定时执行（基于 Vercel Cron Jobs）
+
+## 技术栈
+
+- **前端**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **后端**: Next.js API Routes
+- **数据库**: PostgreSQL (Neon)
+- **认证**: NextAuth.js
+- **ORM**: Prisma
+- **部署**: Vercel
+
+## 环境变量
+
+```env
+DATABASE_URL="postgresql://..."
+NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_URL="https://your-domain.vercel.app"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 本地开发
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# 安装依赖
+npm install
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# 运行开发服务器
+npm run dev
 
-## Learn More
+# 构建项目
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 部署
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+项目已配置自动部署到 Vercel，推送到 master 分支即可触发部署。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+最后更新: 2025/9/20
