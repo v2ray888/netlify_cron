@@ -148,7 +148,7 @@ export default function DashboardPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-500">暂无任务。点击"新建任务"开始创建您的第一个定时任务。</td>
+                  <td colSpan={7} className="py-8 text-center text-gray-500">暂无任务。点击&ldquo;新建任务&rdquo;开始创建您的第一个定时任务。</td>
                 </tr>
               )}
             </tbody>

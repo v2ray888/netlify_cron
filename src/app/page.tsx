@@ -6,7 +6,11 @@ import { useState, useEffect } from "react";
 
 export default function HomePage() {
   const { data: session, status } = useSession();
-  const [healthStatus, setHealthStatus] = useState<any>(null);
+  const [healthStatus, setHealthStatus] = useState<{
+    status: string;
+    timestamp: string;
+    environment: Record<string, string>;
+  } | null>(null);
 
   useEffect(() => {
     // 检查应用健康状态
