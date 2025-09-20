@@ -4,6 +4,7 @@ import "./globals.css";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import SessionProviderWrapper from "../components/SessionProviderWrapper";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,15 +26,24 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession(authOptions);
+  let session = null;
+  
+  try {
+    session = await getServerSession(authOptions);
+  } catch (error) {
+    console.error('Failed to get server session:', error);
+  }
+  
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProviderWrapper session={session}>
-          {children}
-        </SessionProviderWrapper>
+        <ErrorBoundary>
+          <SessionProviderWrapper session={session}>
+            {children}
+          </SessionProviderWrapper>
+        </ErrorBoundary>
       </body>
     </html>
   );

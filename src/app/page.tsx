@@ -2,9 +2,19 @@
 
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function HomePage() {
   const { data: session, status } = useSession();
+  const [healthStatus, setHealthStatus] = useState<any>(null);
+
+  useEffect(() => {
+    // 检查应用健康状态
+    fetch('/api/health')
+      .then(res => res.json())
+      .then(data => setHealthStatus(data))
+      .catch(err => setHealthStatus({ status: 'error', message: err.message }));
+  }, []);
 
   if (status === "loading") {
     return (
@@ -20,6 +30,18 @@ export default function HomePage() {
         <h1 className="mb-6 text-center text-4xl font-bold text-gray-900">
           定时任务管理系统
         </h1>
+        
+        {/* 健康状态显示 */}
+        {healthStatus && (
+          <div className={`mb-4 p-3 rounded-md text-sm ${
+            healthStatus.status === 'ok' 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>
+            系统状态: {healthStatus.status} 
+            {healthStatus.message && ` - ${healthStatus.message}`}
+          </div>
+        )}
 
         {session ? (
           <div className="text-center">
