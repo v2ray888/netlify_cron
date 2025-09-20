@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react"; // Import signOut
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 interface Task {
@@ -32,7 +32,7 @@ export default function DashboardPage() {
     }
   }, [status, router]);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     if (status === "authenticated") {
       setLoading(true);
       try {
@@ -43,17 +43,17 @@ export default function DashboardPage() {
         const data = await response.json();
         setTasks(data.tasks);
         setTotalTasks(data.totalTasks);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch tasks");
       } finally {
         setLoading(false);
       }
     }
-  };
+  }, [status, page, pageSize]);
 
   useEffect(() => {
     fetchTasks();
-  }, [status, page]); // 当 status 或 page 改变时重新获取任务
+  }, [fetchTasks]); // 当 status 或 page 改变时重新获取任务
 
   const handleDeleteTask = async (taskId: string) => {
     if (!confirm("确定要删除此任务吗？")) return;
@@ -68,8 +68,8 @@ export default function DashboardPage() {
       }
 
       fetchTasks(); // 刷新任务列表
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete task");
     }
   };
 
@@ -87,8 +87,8 @@ export default function DashboardPage() {
 
       alert("任务已成功触发执行！");
       fetchTasks(); // 刷新任务列表以显示更新后的执行时间
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to execute task");
     }
   };
 

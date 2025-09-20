@@ -42,13 +42,13 @@ export async function executeTask(taskId: string) {
       },
     });
     console.log(`Task "${task.name}" executed successfully. Status: ${status}, HTTP: ${httpStatusCode}, Response Time: ${responseTimeMs}ms. Next run at: ${newNextExecutionAt.toISOString()}`);
-  } catch (taskError: any) {
+  } catch (taskError) {
     console.error(`Error executing task "${task.name}" (${task.targetUrl}):`, taskError);
     await prisma.taskLog.create({
       data: {
         taskId: task.id,
         status: 'failed',
-        errorMessage: taskError.message || '未知错误',
+        errorMessage: taskError instanceof Error ? taskError.message : '未知错误',
       },
     });
     // Even if task execution fails, update nextExecutionAt to prevent immediate re-execution

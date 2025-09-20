@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react"; // Import signOut
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface User {
   id: string;
@@ -59,7 +59,7 @@ export default function AdminDashboardPage() {
   const [totalTasksCount, setTotalTasksCount] = useState(0);
   const totalTaskPages = Math.ceil(totalTasksCount / taskPageSize);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (status === "authenticated" && session?.user?.role === "admin") {
       try {
         const response = await fetch("/api/admin/users");
@@ -72,9 +72,9 @@ export default function AdminDashboardPage() {
         setError(err instanceof Error ? err.message : "Failed to fetch users");
       }
     }
-  };
+  }, [session, status]);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     if (status === "authenticated" && session?.user?.role === "admin") {
       setLoading(true);
       try {
@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
         setLoading(false);
       }
     }
-  };
+  }, [session, status, taskPage, taskPageSize]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -104,9 +104,9 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (status === "authenticated" && session?.user?.role === "admin") {
       fetchUsers();
-      fetchTasks(); // Fetch tasks when authenticated as admin
+      fetchTasks();
     }
-  }, [status, session, taskPage]); // Add taskPage to dependencies
+  }, [fetchUsers, fetchTasks]);
 
   const handleEditRole = (user: User) => {
     setEditingUser(user);
