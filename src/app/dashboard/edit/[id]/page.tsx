@@ -37,8 +37,8 @@ export default function EditTaskPage({ params }: { params: { id: string } }) {
         setTargetUrl(data.targetUrl);
         setFrequencyMinutes(data.frequencyMinutes);
         setIsEnabled(data.isEnabled);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch task");
       } finally {
         setLoading(false);
       }
@@ -69,7 +69,7 @@ export default function EditTaskPage({ params }: { params: { id: string } }) {
 
       setSuccess("任务更新成功！");
       router.push("/dashboard"); // Redirect to dashboard after successful update
-    } catch (err) {
+    } catch {
       setError("发生错误，请稍后再试。");
     }
   };

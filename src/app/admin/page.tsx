@@ -3,7 +3,6 @@
 import { useSession, signOut } from "next-auth/react"; // Import signOut
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 
 interface User {
   id: string;
@@ -69,8 +68,8 @@ export default function AdminDashboardPage() {
         }
         const data = await response.json();
         setUsers(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch users");
       }
     }
   };
@@ -86,8 +85,8 @@ export default function AdminDashboardPage() {
         const data = await response.json();
         setTasks(data.tasks);
         setTotalTasksCount(data.totalTasks);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch tasks");
       } finally {
         setLoading(false);
       }
@@ -135,8 +134,8 @@ export default function AdminDashboardPage() {
       setShowRoleModal(false);
       setEditingUser(null);
       setNewRole("");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update user role");
     }
   };
 
@@ -154,8 +153,8 @@ export default function AdminDashboardPage() {
 
       await fetchUsers(); // Refresh user list
       await fetchTasks(); // Also refresh tasks as some might be deleted
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete user");
     }
   };
 

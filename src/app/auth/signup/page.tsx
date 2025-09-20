@@ -31,7 +31,7 @@ export default function SignUpPage() {
       }
 
       router.push("/auth/signin"); // Redirect to sign-in page on successful registration
-    } catch (err) {
+    } catch {
       setError("发生错误，请稍后再试。");
     }
   };

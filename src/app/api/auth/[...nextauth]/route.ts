@@ -22,13 +22,13 @@ export const authOptions: AuthOptions = {
           where: { email: credentials.email },
         });
 
-        if (!user || !user.password) {
+        if (!user || !user.password_hash) {
           return null;
         }
 
         const isValidPassword = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.password_hash
         );
 
         if (!isValidPassword) {

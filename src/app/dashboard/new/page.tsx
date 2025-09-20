@@ -35,7 +35,7 @@ export default function NewTaskPage() {
 
       setSuccess("任务创建成功！");
       router.push("/dashboard"); // Redirect to dashboard after successful creation
-    } catch (err) {
+    } catch {
       setError("发生错误，请稍后再试。");
     }
   };
