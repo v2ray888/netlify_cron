@@ -12,11 +12,12 @@ interface User {
 
 interface Task {
   id: string;
-  url: string;
-  intervalMin: number;
-  active: boolean;
-  lastRun: string | null;
-  nextRun: string | null;
+  name: string;
+  targetUrl: string;
+  frequencyMinutes: number;
+  isEnabled: boolean;
+  lastExecutedAt: string | null;
+  nextExecutionAt: string | null;
   user: {
     email: string;
   };
@@ -91,33 +92,33 @@ export default function AdminPage() {
       setEditingUser(null);
       fetchUsers();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Update failed");
+      alert(err instanceof Error ? err.message : "更新失败");
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm("Are you sure? This will delete the user and all their tasks.")) return;
+    if (!window.confirm("确定要删除这个用户吗？这将删除用户及其所有任务。")) return;
     try {
       const response = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
       if (!response.ok) throw new Error("Failed to delete user");
       fetchUsers();
       fetchTasks(); // Refresh tasks as they might have been deleted
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Deletion failed");
+      alert(err instanceof Error ? err.message : "删除失败");
     }
   };
 
   if (status === "loading" || (status === "authenticated" && session.user.role !== 'admin')) {
-    return <div className="flex min-h-screen items-center justify-center">Loading or redirecting...</div>;
+    return <div className="flex min-h-screen items-center justify-center">加载中或重定向...</div>;
   }
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900">管理员控制台</h1>
           <button onClick={() => signOut({ callbackUrl: "/auth/signin" })} className="rounded-md bg-red-600 px-4 py-2 text-white shadow-sm hover:bg-red-700">
-            Sign Out
+            退出登录
           </button>
         </div>
         
@@ -125,24 +126,24 @@ export default function AdminPage() {
 
         {/* User Management */}
         <div className="mb-8 rounded-lg bg-white p-6 shadow-md">
-          <h2 className="mb-4 text-2xl font-semibold text-gray-800">User Management</h2>
+          <h2 className="mb-4 text-2xl font-semibold text-gray-800">用户管理</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Role</th>
-                  <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">邮箱</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">角色</th>
+                  <th scope="col" className="relative px-6 py-3"><span className="sr-only">操作</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {users.map((user) => (
                   <tr key={user.id}>
                     <td className="px-6 py-4">{user.email}</td>
-                    <td className="px-6 py-4">{user.role}</td>
+                    <td className="px-6 py-4">{user.role === 'admin' ? '管理员' : '用户'}</td>
                     <td className="px-6 py-4 text-right">
-                      <button onClick={() => { setEditingUser(user); setNewRole(user.role); }} className="text-indigo-600 hover:text-indigo-900">Edit Role</button>
-                      <button onClick={() => handleDeleteUser(user.id)} className="ml-4 text-red-600 hover:text-red-900">Delete</button>
+                      <button onClick={() => { setEditingUser(user); setNewRole(user.role); }} className="text-indigo-600 hover:text-indigo-900">编辑角色</button>
+                      <button onClick={() => handleDeleteUser(user.id)} className="ml-4 text-red-600 hover:text-red-900">删除</button>
                     </td>
                   </tr>
                 ))}
@@ -153,41 +154,43 @@ export default function AdminPage() {
 
         {/* Task Management */}
         <div className="rounded-lg bg-white p-6 shadow-md">
-          <h2 className="mb-4 text-2xl font-semibold text-gray-800">All Tasks</h2>
+          <h2 className="mb-4 text-2xl font-semibold text-gray-800">所有任务</h2>
           {loading ? (
-            <p>Loading tasks...</p>
+            <p>加载任务中...</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">URL</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Interval (min)</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Owner</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Last Run</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Next Run</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">任务名称</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">目标URL</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">频率(分钟)</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">状态</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">所有者</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">上次执行</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">下次执行</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {tasks.length > 0 ? (
                     tasks.map((task) => (
                       <tr key={task.id}>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{task.url}</td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.intervalMin}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{task.name}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.targetUrl}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.frequencyMinutes}</td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                          <span className={`rounded-full px-2 py-1 text-xs font-semibold ${task.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                            {task.active ? "Active" : "Inactive"}
+                          <span className={`rounded-full px-2 py-1 text-xs font-semibold ${task.isEnabled ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                            {task.isEnabled ? "启用" : "禁用"}
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.user.email}</td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.lastRun ? new Date(task.lastRun).toLocaleString() : "N/A"}</td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.nextRun ? new Date(task.nextRun).toLocaleString() : "N/A"}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.lastExecutedAt ? new Date(task.lastExecutedAt).toLocaleString() : "未执行"}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.nextExecutionAt ? new Date(task.nextExecutionAt).toLocaleString() : "未安排"}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-gray-500">No tasks found.</td>
+                      <td colSpan={7} className="py-8 text-center text-gray-500">暂无任务。</td>
                     </tr>
                   )}
                 </tbody>
@@ -195,11 +198,11 @@ export default function AdminPage() {
               {totalTaskPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
                   <button onClick={() => setTaskPage((p) => Math.max(1, p - 1))} disabled={taskPage === 1} className="rounded-md border bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-                    Previous
+                    上一页
                   </button>
-                  <span className="text-sm text-gray-700">Page {taskPage} of {totalTaskPages}</span>
+                  <span className="text-sm text-gray-700">第 {taskPage} 页，共 {totalTaskPages} 页</span>
                   <button onClick={() => setTaskPage((p) => Math.min(totalTaskPages, p + 1))} disabled={taskPage === totalTaskPages} className="rounded-md border bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-                    Next
+                    下一页
                   </button>
                 </div>
               )}
@@ -212,14 +215,14 @@ export default function AdminPage() {
       {editingUser && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-gray-500 bg-opacity-75">
           <div className="w-full max-w-md rounded-lg bg-white p-8">
-            <h3 className="mb-4 text-xl font-bold">Edit Role for {editingUser.email}</h3>
+            <h3 className="mb-4 text-xl font-bold">编辑 {editingUser.email} 的角色</h3>
             <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="mb-4 block w-full rounded-md border-gray-300 shadow-sm">
-              <option value="user">user</option>
-              <option value="admin">admin</option>
+              <option value="user">用户</option>
+              <option value="admin">管理员</option>
             </select>
             <div className="flex justify-end gap-4">
-              <button onClick={() => setEditingUser(null)} className="rounded-md bg-gray-200 px-4 py-2 hover:bg-gray-300">Cancel</button>
-              <button onClick={handleUpdateRole} className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">Save</button>
+              <button onClick={() => setEditingUser(null)} className="rounded-md bg-gray-200 px-4 py-2 hover:bg-gray-300">取消</button>
+              <button onClick={handleUpdateRole} className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">保存</button>
             </div>
           </div>
         </div>
