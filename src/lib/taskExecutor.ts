@@ -1,64 +1,66 @@
 import prisma from '@/lib/prisma';
+import { Task } from '@prisma/client';
 
-export async function executeTask(taskId: string) {
+/**
+ * Executes a single task.
+ * @param task The task object from the database.
+ */
+export async function executeTask(task: Task) {
   const now = new Date();
-  const task = await prisma.task.findUnique({
-    where: { id: taskId },
-  });
 
-  if (!task || !task.isEnabled) {
-    console.log(`Task ${taskId} is not found or not enabled. Skipping execution.`);
+  if (!task.active) {
+    console.log(`Task ${task.id} is not active. Skipping execution.`);
     return;
   }
 
+  let status = 'success';
+  let message = `Successfully accessed ${task.url}`;
+  let httpStatusCode: number | null = null;
+  const startTime = process.hrtime.bigint();
+
   try {
-    console.log(`Executing task "${task.name}" (${task.targetUrl})...`);
-    const startTime = process.hrtime.bigint();
-    const response = await fetch(task.targetUrl, { method: 'GET' }); // Assuming GET request for now
-    const endTime = process.hrtime.bigint();
-    const responseTimeMs = Number(endTime - startTime) / 1_000_000; // Convert nanoseconds to milliseconds
+    console.log(`Executing task for URL: ${task.url}`);
+    const response = await fetch(task.url, { method: 'GET', redirect: 'follow', timeout: 30000 }); // 30s timeout
+    httpStatusCode = response.status;
 
-    const httpStatusCode = response.status;
-    const status = response.ok ? 'success' : 'failed';
-    const errorMessage = response.ok ? null : `HTTP Status: ${httpStatusCode}`;
+    if (!response.ok) {
+      status = 'failed';
+      message = `HTTP Error: ${response.status} ${response.statusText}`;
+    }
+  } catch (error) {
+    console.error(`Error executing task ${task.id}:`, error);
+    status = 'failed';
+    message = error instanceof Error ? error.message : 'Unknown error during fetch';
+  }
 
+  const endTime = process.hrtime.bigint();
+  const responseTimeMs = Number(endTime - startTime) / 1_000_000;
+
+  try {
+    // Create a log entry for the execution
     await prisma.taskLog.create({
       data: {
         taskId: task.id,
         status,
+        message,
         httpStatusCode,
-        errorMessage,
         responseTimeMs,
       },
     });
 
-    const newNextExecutionAt = new Date(now.getTime() + task.frequencyMinutes * 60 * 1000);
+    // Update the task's last run time and calculate the next run time
+    const nextRun = new Date(now.getTime() + task.intervalMin * 60 * 1000);
 
     await prisma.task.update({
       where: { id: task.id },
       data: {
-        lastExecutedAt: now,
-        nextExecutionAt: newNextExecutionAt,
+        lastRun: now,
+        nextRun: nextRun,
       },
     });
-    console.log(`Task "${task.name}" executed successfully. Status: ${status}, HTTP: ${httpStatusCode}, Response Time: ${responseTimeMs}ms. Next run at: ${newNextExecutionAt.toISOString()}`);
-  } catch (taskError) {
-    console.error(`Error executing task "${task.name}" (${task.targetUrl}):`, taskError);
-    await prisma.taskLog.create({
-      data: {
-        taskId: task.id,
-        status: 'failed',
-        errorMessage: taskError instanceof Error ? taskError.message : '未知错误',
-      },
-    });
-    // Even if task execution fails, update nextExecutionAt to prevent immediate re-execution
-    const newNextExecutionAt = new Date(now.getTime() + task.frequencyMinutes * 60 * 1000);
-    await prisma.task.update({
-      where: { id: task.id },
-      data: {
-        lastExecutedAt: now,
-        nextExecutionAt: newNextExecutionAt,
-      },
-    });
+
+    console.log(`Task ${task.id} finished. Status: ${status}. Next run: ${nextRun.toISOString()}`);
+  } catch (dbError) {
+    console.error(`Failed to log or update task ${task.id} in DB:`, dbError);
   }
 }

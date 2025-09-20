@@ -4,7 +4,7 @@ import { authOptions } from '../../../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
 
 // Update user role
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, context: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user || session.user.role !== 'admin') {
@@ -12,7 +12,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
   try {
-    const { id } = params;
+    const { id } = context.params;
     const { role } = await request.json();
 
     if (!['user', 'admin'].includes(role)) {
@@ -32,7 +32,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 // Delete user
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, context: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user || session.user.role !== 'admin') {
@@ -40,7 +40,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   }
 
   try {
-    const { id } = params;
+    const { id } = context.params;
 
     if (id === session.user.id) {
         return NextResponse.json({ message: 'Cannot delete your own account' }, { status: 400 });
