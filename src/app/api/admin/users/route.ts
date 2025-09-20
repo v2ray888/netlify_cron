@@ -1,28 +1,22 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
-import prisma from '../../../../../lib/prisma';
+import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user || session.user.role !== 'admin') {
-    return NextResponse.json({ message: '未授权或无权限' }, { status: 403 });
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
       orderBy: { createdAt: 'desc' },
     });
-    return NextResponse.json(users);
+    return NextResponse.json(users, { status: 200 });
   } catch (error) {
-    console.error('获取用户失败:', error);
-    return NextResponse.json({ message: '获取用户失败' }, { status: 500 });
+    console.error('Error fetching users:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

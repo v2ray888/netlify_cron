@@ -1,17 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
-import prisma from '../../../../../lib/prisma';
+import prisma from '@/lib/prisma';
 
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const { params } = context;
+// Get a specific task
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
-    return NextResponse.json({ message: '未授权' }, { status: 401 });
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -21,68 +18,86 @@ export async function GET(
     });
 
     if (!task) {
-      return NextResponse.json({ message: '任务未找到' }, { status: 404 });
+      return NextResponse.json({ message: 'Task not found' }, { status: 404 });
     }
 
-    return NextResponse.json(task);
+    return NextResponse.json(task, { status: 200 });
   } catch (error) {
-    console.error('获取任务失败:', error);
-    return NextResponse.json({ message: '获取任务失败' }, { status: 500 });
+    console.error(`Error fetching task ${params.id}:`, error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function PUT(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const { params } = context;
+// Update a task
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
-    return NextResponse.json({ message: '未授权' }, { status: 401 });
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const { id } = params;
-    const { name, targetUrl, frequencyMinutes, isEnabled } = await request.json();
+    const { url, intervalMin, active } = await request.json();
+
+    if (!url || !intervalMin) {
+      return NextResponse.json({ message: 'URL and interval are required' }, { status: 400 });
+    }
+
+    const task = await prisma.task.findUnique({
+        where: { id, userId: session.user.id },
+    });
+
+    if (!task) {
+        return NextResponse.json({ message: 'Task not found or unauthorized' }, { status: 404 });
+    }
+    
+    const now = new Date();
+    const nextRun = new Date(now.getTime() + intervalMin * 60 * 1000);
 
     const updatedTask = await prisma.task.update({
-      where: { id, userId: session.user.id },
+      where: { id },
       data: {
-        name,
-        targetUrl,
-        frequencyMinutes: parseInt(frequencyMinutes, 10),
-        isEnabled,
+        url,
+        intervalMin: parseInt(intervalMin, 10),
+        active,
+        nextRun,
       },
     });
 
-    return NextResponse.json(updatedTask);
+    return NextResponse.json(updatedTask, { status: 200 });
   } catch (error) {
-    console.error('更新任务失败:', error);
-    return NextResponse.json({ message: '更新任务失败' }, { status: 500 });
+    console.error(`Error updating task ${params.id}:`, error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const { params } = context;
+// Delete a task
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
-    return NextResponse.json({ message: '未授权' }, { status: 401 });
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const { id } = params;
-    await prisma.task.delete({
-      where: { id, userId: session.user.id },
+    
+    const task = await prisma.task.findUnique({
+        where: { id, userId: session.user.id },
     });
 
-    return NextResponse.json({ message: '任务删除成功' }, { status: 200 });
+    if (!task) {
+        return NextResponse.json({ message: 'Task not found or unauthorized' }, { status: 404 });
+    }
+
+    await prisma.task.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: 'Task deleted successfully' }, { status: 200 });
   } catch (error) {
-    console.error('删除任务失败:', error);
-    return NextResponse.json({ message: '删除任务失败' }, { status: 500 });
+    console.error(`Error deleting task ${params.id}:`, error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
