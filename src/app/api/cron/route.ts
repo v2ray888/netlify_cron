@@ -2,11 +2,17 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { executeTask } from '@/lib/taskExecutor'; // Import the new utility function
 
-export async function GET() {
+async function executeCronJob(request?: Request) {
   try {
-    // In a real application, you might want to add some authentication/authorization
-    // to this cron endpoint to prevent unauthorized access.
-    // For Vercel Cron Jobs, Vercel ensures only it can trigger this endpoint.
+    // 如果有请求对象，检查认证
+    if (request) {
+      const authHeader = request.headers.get('authorization');
+      const cronSecret = process.env.CRON_SECRET || 'default-secret';
+      
+      if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.slice(7) !== cronSecret) {
+        return NextResponse.json({ message: '未授权访问' }, { status: 401 });
+      }
+    }
 
     const now = new Date();
     const tasksToExecute = await prisma.task.findMany({
@@ -19,15 +25,32 @@ export async function GET() {
       },
     });
 
-    console.log(`Found ${tasksToExecute.length} tasks to execute.`);
+    console.log(`Found ${tasksToExecute.length} tasks to execute at ${now.toISOString()}`);
 
     for (const task of tasksToExecute) {
       await executeTask(task.id); // Call the refactored executeTask function
     }
 
-    return NextResponse.json({ message: 'Cron job executed successfully' }, { status: 200 });
+    return NextResponse.json({ 
+      message: 'Cron job executed successfully', 
+      executedTasks: tasksToExecute.length,
+      timestamp: now.toISOString()
+    }, { status: 200 });
   } catch (error) {
     console.error('Cron job failed:', error);
-    return NextResponse.json({ message: 'Cron job failed', error: (error as Error).message }, { status: 500 });
+    return NextResponse.json({ 
+      message: 'Cron job failed', 
+      error: (error as Error).message 
+    }, { status: 500 });
   }
+}
+
+// POST 方法用于 GitHub Actions 调用
+export async function POST(request: Request) {
+  return executeCronJob(request);
+}
+
+// GET 方法用于 Vercel Cron Jobs（向后兼容）
+export async function GET() {
+  return executeCronJob();
 }
