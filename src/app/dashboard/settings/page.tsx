@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import ModernDashboardLayout from '@/components/ModernDashboardLayout'
 import UserSettingsTabs from '@/components/UserSettingsTabs'
 
 export default async function UserSettingsPage() {
@@ -11,8 +12,8 @@ export default async function UserSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ModernDashboardLayout>
       <UserSettingsTabs user={session.user} />
-    </div>
+    </ModernDashboardLayout>
   )
 }
