@@ -23,25 +23,55 @@ export async function executeTask(taskId: string) {
   let status = 'success';
   let errorMessage: string | null = null;
   let httpStatusCode: number | null = null;
+  let responseSize: number | null = null;
+  let requestHeaders: object | undefined = undefined;
+  let responseHeaders: object | undefined = undefined;
+  let responseBody: string | null = null;
   const startTime = process.hrtime.bigint();
 
   try {
     console.log(`Executing task for URL: ${task.targetUrl}`);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-    
-    const response = await fetch(task.targetUrl, { 
-      method: 'GET', 
+    const timeoutId = setTimeout(() => controller.abort(), task.timeoutSeconds * 1000);
+
+    // 构建请求选项
+    const requestOptions: RequestInit = {
+      method: task.httpMethod || 'GET',
       redirect: 'follow',
       signal: controller.signal
-    });
+    };
+
+    // 添加请求头
+    if (task.headers) {
+      requestOptions.headers = task.headers as Record<string, string>;
+      requestHeaders = task.headers as object;
+    }
+
+    // 添加请求体（仅对POST/PUT有效）
+    if (task.body && (task.httpMethod === 'POST' || task.httpMethod === 'PUT')) {
+      requestOptions.body = task.body;
+    }
+
+    const response = await fetch(task.targetUrl, requestOptions);
     
     clearTimeout(timeoutId);
     httpStatusCode = response.status;
+    responseSize = parseInt(response.headers.get('content-length') || '0');
+
+    // 获取响应头
+    const headersObj: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      headersObj[key] = value;
+    });
+    responseHeaders = headersObj;
 
     if (!response.ok) {
       status = 'failed';
       errorMessage = `HTTP Error: ${response.status} ${response.statusText}`;
+    } else {
+      // 读取响应体的前1000个字符
+      const text = await response.text();
+      responseBody = text.substring(0, 1000);
     }
   } catch (error) {
     console.error(`Error executing task ${task.id}:`, error);
@@ -61,6 +91,10 @@ export async function executeTask(taskId: string) {
         errorMessage,
         httpStatusCode,
         responseTimeMs,
+        responseSize,
+        requestHeaders,
+        responseHeaders,
+        responseBody,
       },
     });
 
@@ -72,6 +106,13 @@ export async function executeTask(taskId: string) {
       data: {
         lastExecutedAt: now,
         nextExecutionAt: nextExecutionAt,
+        successCount: {
+          increment: status === 'success' ? 1 : 0
+        },
+        failureCount: {
+          increment: status === 'failed' ? 1 : 0
+        },
+        avgResponseTime: responseTimeMs // 简单地更新为最后一次的响应时间（实际应用中应该计算平均值）
       },
     });
 

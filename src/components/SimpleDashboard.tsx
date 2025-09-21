@@ -18,6 +18,7 @@ export default function SimpleDashboard() {
   const { data: session } = useSession()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
+  const [executingTaskId, setExecutingTaskId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchTasks()
@@ -50,6 +51,28 @@ export default function SimpleDashboard() {
       }
     } catch (error) {
       console.error('Failed to toggle task:', error)
+    }
+  }
+
+  const executeTask = async (taskId: string) => {
+    try {
+      setExecutingTaskId(taskId)
+      const response = await fetch(`/api/tasks/${taskId}/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      
+      if (response.ok) {
+        // 重新获取任务数据以更新最后执行时间
+        fetchTasks()
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to execute task:', errorData.message)
+      }
+    } catch (error) {
+      console.error('Failed to execute task:', error)
+    } finally {
+      setExecutingTaskId(null)
     }
   }
 
@@ -286,6 +309,17 @@ export default function SimpleDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
+                          <button
+                            onClick={() => executeTask(task.id)}
+                            disabled={executingTaskId === task.id}
+                            className={`${
+                              executingTaskId === task.id
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-blue-600 hover:text-blue-900'
+                            }`}
+                          >
+                            {executingTaskId === task.id ? '执行中...' : '执行'}
+                          </button>
                           <button
                             onClick={() => toggleTask(task.id, !task.isEnabled)}
                             className={`${

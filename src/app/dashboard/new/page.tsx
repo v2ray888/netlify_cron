@@ -8,6 +8,8 @@ export default function NewTaskPage() {
   const [name, setName] = useState("");
   const [targetUrl, setTargetUrl] = useState("");
   const [httpMethod, setHttpMethod] = useState("GET");
+  const [headers, setHeaders] = useState("");
+  const [body, setBody] = useState("");
   const [frequencyMinutes, setFrequencyMinutes] = useState(5);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -29,11 +31,35 @@ export default function NewTaskPage() {
       return;
     }
 
+    // 验证并解析请求头
+    let parsedHeaders = null;
+    if (headers.trim()) {
+      try {
+        parsedHeaders = JSON.parse(headers);
+      } catch (err) {
+        setError("请求头格式错误，请输入有效的JSON格式");
+        return;
+      }
+    }
+
+    // 验证请求体（仅对POST/PUT有效）
+    if (body.trim() && httpMethod !== "POST" && httpMethod !== "PUT") {
+      setError("只有POST和PUT方法才能设置请求体");
+      return;
+    }
+
     try {
       const response = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, targetUrl, httpMethod, frequencyMinutes }),
+        body: JSON.stringify({ 
+          name, 
+          targetUrl, 
+          httpMethod, 
+          headers: parsedHeaders,
+          body: body.trim() || undefined,
+          frequencyMinutes 
+        }),
       });
 
       if (!response.ok) {
@@ -92,6 +118,42 @@ export default function NewTaskPage() {
               onChange={(e) => setTargetUrl(e.target.value)}
             />
           </div>
+          
+          <div>
+            <label htmlFor="headers" className="block text-sm font-medium text-gray-700">
+              请求头 (JSON格式, 可选)
+            </label>
+            <textarea
+              id="headers"
+              placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              rows={3}
+              value={headers}
+              onChange={(e) => setHeaders(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              请输入有效的JSON格式，例如: {`{"Authorization": "Bearer token"}`}
+            </p>
+          </div>
+          
+          <div>
+            <label htmlFor="body" className="block text-sm font-medium text-gray-700">
+              请求体 (仅对POST/PUT有效, 可选)
+            </label>
+            <textarea
+              id="body"
+              placeholder='{"key": "value"}'
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              rows={3}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              disabled={httpMethod !== "POST" && httpMethod !== "PUT"}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              请输入请求体内容，仅对POST和PUT方法有效
+            </p>
+          </div>
+          
           <div>
             <label htmlFor="frequencyMinutes" className="block text-sm font-medium text-gray-700">执行频率（分钟）</label>
             <input
