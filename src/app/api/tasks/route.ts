@@ -17,7 +17,7 @@ export async function GET() {
       include: {
         logs: {
           orderBy: { executedAt: 'desc' },
-          take: 5
+          take: 30 // 获取每个任务的最近30条日志
         },
         _count: {
           select: { logs: true }

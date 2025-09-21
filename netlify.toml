@@ -15,10 +15,3 @@
   status = 200
   # 排除 API 路由和 Netlify 函数
   condition = { "!path" = ["/api/*", "/.netlify/*"] }
-
-# 为 API 路由设置特殊处理
-[[redirects]]
-  from = "/api/cron"
-  to = "/.netlify/functions/cron-job"
-  status = 200
-  force = true

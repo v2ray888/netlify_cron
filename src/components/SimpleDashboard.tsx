@@ -12,6 +12,16 @@ interface Task {
   isEnabled: boolean
   lastExecutedAt: string | null
   nextExecutionAt: string | null
+  logs: TaskLog[]
+}
+
+interface TaskLog {
+  id: string
+  executedAt: string
+  status: string
+  httpStatusCode: number | null
+  responseTimeMs: number | null
+  errorMessage: string | null
 }
 
 export default function SimpleDashboard() {
@@ -19,6 +29,7 @@ export default function SimpleDashboard() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [executingTaskId, setExecutingTaskId] = useState<string | null>(null)
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null) // 用于展开/收起任务日志
 
   useEffect(() => {
     fetchTasks()
@@ -73,6 +84,36 @@ export default function SimpleDashboard() {
       console.error('Failed to execute task:', error)
     } finally {
       setExecutingTaskId(null)
+    }
+  }
+
+  const deleteTask = async (taskId: string, taskName: string) => {
+    // 确认删除
+    if (!confirm(`确定要删除任务 "${taskName}" 吗？此操作不可恢复。`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      
+      if (response.ok) {
+        // 重新获取任务数据以更新列表
+        fetchTasks()
+        // 如果删除的是展开的日志任务，关闭它
+        if (expandedTaskId === taskId) {
+          setExpandedTaskId(null);
+        }
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to delete task:', errorData.message)
+        alert(`删除任务失败: ${errorData.message}`)
+      }
+    } catch (error) {
+      console.error('Failed to delete task:', error)
+      alert('删除任务时发生错误')
     }
   }
 
@@ -336,6 +377,12 @@ export default function SimpleDashboard() {
                           >
                             编辑
                           </Link>
+                          <button
+                            onClick={() => deleteTask(task.id, task.name)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            删除
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -343,6 +390,91 @@ export default function SimpleDashboard() {
                 </tbody>
               </table>
             )}
+          </div>
+        </div>
+
+        {/* 任务执行日志详情 */}
+        <div className="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">任务执行日志详情</h3>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">查看每个任务的最近执行记录</p>
+          </div>
+          <div className="overflow-x-auto">
+            {tasks.map((task) => (
+              <div key={`logs-${task.id}`} className="border-b border-gray-200 last:border-b-0">
+                <div 
+                  className="px-6 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100 flex justify-between items-center"
+                  onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
+                >
+                  <div className="flex items-center">
+                    <svg className="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span className="font-medium text-gray-900">{task.name}</span>
+                    <span className="ml-2 text-sm text-gray-500 truncate max-w-md">{task.targetUrl}</span>
+                  </div>
+                  <svg 
+                    className={`h-5 w-5 text-gray-500 transform transition-transform ${expandedTaskId === task.id ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                
+                {expandedTaskId === task.id && (
+                  <div className="px-6 py-4">
+                    {task.logs && task.logs.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">执行时间</th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HTTP状态码</th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">响应时间</th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">错误信息</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {task.logs.slice(0, 30).map((log) => (
+                              <tr key={log.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {new Date(log.executedAt).toLocaleString('zh-CN')}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    log.status === 'success' 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : log.status === 'failed' 
+                                        ? 'bg-red-100 text-red-800' 
+                                        : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {log.status === 'success' ? '成功' : log.status === 'failed' ? '失败' : log.status}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {log.httpStatusCode || '-'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {log.responseTimeMs ? `${log.responseTimeMs}ms` : '-'}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                                  {log.errorMessage || '-'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 py-4 text-center">暂无执行记录</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </main>
