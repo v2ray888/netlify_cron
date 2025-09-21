@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "定时任务管理系统",
-  description: "用户注册登录后可以添加每多少分钟访问某一个网站的系统",
+  title: "自动化定时任务平台 - 企业级定时任务管理系统",
+  description: "专业的自动化定时任务平台，支持每分钟级别的精确任务调度，帮助企业自动化网站访问、健康检查和数据抓取等任务",
 };
 
 export default async function RootLayout({
@@ -35,9 +35,9 @@ export default async function RootLayout({
   }
   
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50`}
       >
         <ErrorBoundary>
           <SessionProviderWrapper session={session}>
