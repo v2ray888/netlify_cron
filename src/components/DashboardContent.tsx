@@ -107,6 +107,32 @@ export default function DashboardContent() {
     )
   }
 
+  // 计算今日执行数量
+  const calculateTodayExecutions = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let todayExecutions = 0;
+    
+    // 遍历所有任务的日志，计算今日执行数量
+    tasks.forEach(task => {
+      if (task.logs) {
+        task.logs.forEach(log => {
+          const logDate = new Date(log.executedAt);
+          logDate.setHours(0, 0, 0, 0);
+          
+          if (logDate.getTime() === today.getTime()) {
+            todayExecutions++;
+          }
+        });
+      }
+    });
+    
+    return todayExecutions;
+  };
+
+  const todayExecutions = calculateTodayExecutions();
+
   return (
     <div>
       {/* 页面标题和操作按钮 */}
@@ -194,7 +220,7 @@ export default function DashboardContent() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">今日执行</dt>
                   <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">0</div>
+                    <div className="text-2xl font-semibold text-gray-900">{todayExecutions}</div>
                   </dd>
                 </dl>
               </div>
