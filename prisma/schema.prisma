@@ -27,24 +27,63 @@ model Task {
   id                String    @id @default(uuid())
   userId            String
   name              String
+  description       String?
   targetUrl         String
-  frequencyMinutes  Int
+  httpMethod        String    @default("GET") // GET, POST, PUT, DELETE
+  headers           Json?     // Custom headers as JSON
+  body              String?   // Request body for POST/PUT
+  cronExpression    String?   // Cron expression (e.g., "0 */5 * * *")
+  frequencyMinutes  Int       // Fallback for simple frequency
+  timeoutSeconds    Int       @default(30)
+  retryAttempts     Int       @default(3)
+  retryDelaySeconds Int       @default(60)
   isEnabled         Boolean   @default(true)
   lastExecutedAt    DateTime?
   nextExecutionAt   DateTime?
+  successCount      Int       @default(0)
+  failureCount      Int       @default(0)
+  avgResponseTime   Float?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   logs              TaskLog[]
+  notifications     TaskNotification[]
 }
 
 model TaskLog {
   id                String    @id @default(uuid())
   taskId            String
   executedAt        DateTime  @default(now())
-  status            String    // 'success' or 'failed'
+  status            String    // 'success', 'failed', 'timeout', 'retry'
   httpStatusCode    Int?
   responseTimeMs    Int?
+  responseSize      Int?      // Response size in bytes
   errorMessage      String?   @db.Text
+  requestHeaders    Json?     // Headers sent
+  responseHeaders   Json?     // Headers received
+  responseBody      String?   @db.Text // First 1000 chars of response
+  retryAttempt      Int       @default(0)
   task              Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model TaskNotification {
+  id          String   @id @default(uuid())
+  taskId      String
+  type        String   // 'email', 'webhook', 'slack'
+  target      String   // Email address, webhook URL, etc.
+  events      String[] // ['success', 'failure', 'timeout']
+  isEnabled   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model SystemStats {
+  id                String   @id @default(uuid())
+  date              DateTime @unique @default(now())
+  totalExecutions   Int      @default(0)
+  successfulRuns    Int      @default(0)
+  failedRuns        Int      @default(0)
+  avgResponseTime   Float?
+  totalUsers        Int      @default(0)
+  activeTasks       Int      @default(0)
 }

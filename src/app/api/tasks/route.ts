@@ -1,67 +1,92 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import prisma from '@/lib/prisma'
 
-export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user) {
-    return NextResponse.json({ message: '未授权' }, { status: 401 });
-  }
-
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
-    const skip = (page - 1) * pageSize;
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    const [tasks, totalTasks] = await prisma.$transaction([
-      prisma.task.findMany({
-        where: { userId: session.user.id },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: pageSize,
-      }),
-      prisma.task.count({
-        where: { userId: session.user.id },
-      }),
-    ]);
+    const tasks = await prisma.task.findMany({
+      where: {
+        userId: session.user.id
+      },
+      include: {
+        logs: {
+          orderBy: { executedAt: 'desc' },
+          take: 5
+        },
+        _count: {
+          select: { logs: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
 
-    return NextResponse.json({ tasks, totalTasks, page, pageSize });
+    return NextResponse.json(tasks)
   } catch (error) {
-    console.error('获取任务失败:', error);
-    return NextResponse.json({ message: '获取任务失败' }, { status: 500 });
+    console.error('Failed to fetch tasks:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user) {
-    return NextResponse.json({ message: '未授权' }, { status: 401 });
-  }
-
+export async function POST(request: NextRequest) {
   try {
-    const { name, targetUrl, frequencyMinutes } = await request.json();
-
-    if (!name || !targetUrl || !frequencyMinutes) {
-      return NextResponse.json({ message: '缺少必要的任务信息' }, { status: 400 });
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const newTask = await prisma.task.create({
-      data: {
-        name,
-        targetUrl,
-        frequencyMinutes: parseInt(frequencyMinutes, 10),
-        userId: session.user.id,
-        // nextExecutionAt will be set by the cron job logic
-      },
-    });
+    const body = await request.json()
+    const {
+      name,
+      description,
+      targetUrl,
+      httpMethod = 'GET',
+      headers,
+      body: requestBody,
+      cronExpression,
+      frequencyMinutes,
+      timeoutSeconds = 30,
+      retryAttempts = 3,
+      retryDelaySeconds = 60
+    } = body
 
-    return NextResponse.json(newTask, { status: 201 });
+    // 验证必填字段
+    if (!name || !targetUrl || !frequencyMinutes) {
+      return NextResponse.json(
+        { error: 'Name, targetUrl, and frequencyMinutes are required' },
+        { status: 400 }
+      )
+    }
+
+    // 计算下次执行时间
+    const nextExecutionAt = new Date(Date.now() + frequencyMinutes * 60 * 1000)
+
+    const task = await prisma.task.create({
+      data: {
+        userId: session.user.id,
+        name,
+        description,
+        targetUrl,
+        httpMethod,
+        headers: headers || null,
+        body: requestBody || null,
+        cronExpression,
+        frequencyMinutes,
+        timeoutSeconds,
+        retryAttempts,
+        retryDelaySeconds,
+        nextExecutionAt
+      }
+    })
+
+    return NextResponse.json(task, { status: 201 })
   } catch (error) {
-    console.error('创建任务失败:', error);
-    return NextResponse.json({ message: '创建任务失败' }, { status: 500 });
+    console.error('Failed to create task:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
