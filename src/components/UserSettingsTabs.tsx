@@ -17,16 +17,8 @@ interface UserSettingsTabsProps {
 }
 
 export default function UserSettingsTabs({ user }: UserSettingsTabsProps) {
-  const pathname = usePathname()
-
-  // 获取当前激活的标签页
-  const getActiveTab = () => {
-    if (pathname?.includes('/settings/password')) return 'password'
-    if (pathname?.includes('/settings/profile')) return 'profile'
-    return 'profile'
-  }
-
-  const activeTab = getActiveTab()
+  // 使用状态来控制当前显示的标签页，而不是依赖URL路径
+  const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile')
 
   return (
     <div className="space-y-6">
@@ -39,8 +31,8 @@ export default function UserSettingsTabs({ user }: UserSettingsTabsProps) {
       {/* 标签页导航 */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
-          <Link
-            href="/dashboard/settings/profile"
+          <button
+            onClick={() => setActiveTab('profile')}
             className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'profile'
                 ? 'border-indigo-500 text-indigo-600'
@@ -48,9 +40,9 @@ export default function UserSettingsTabs({ user }: UserSettingsTabsProps) {
             }`}
           >
             个人信息
-          </Link>
-          <Link
-            href="/dashboard/settings/password"
+          </button>
+          <button
+            onClick={() => setActiveTab('password')}
             className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'password'
                 ? 'border-indigo-500 text-indigo-600'
@@ -58,7 +50,7 @@ export default function UserSettingsTabs({ user }: UserSettingsTabsProps) {
             }`}
           >
             修改密码
-          </Link>
+          </button>
         </nav>
       </div>
 

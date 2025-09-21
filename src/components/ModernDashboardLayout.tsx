@@ -25,16 +25,33 @@ interface TaskLog {
   errorMessage: string | null
 }
 
-export default function ModernDashboardLayout({ children }: { children: React.ReactNode }) {
+export default function ModernDashboardLayout({ 
+  children,
+  showSettings = false,
+  settingsTab = 'profile'
+}: { 
+  children: React.ReactNode;
+  showSettings?: boolean;
+  settingsTab?: 'profile' | 'password';
+}) {
   const { data: session } = useSession()
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [tasks, setTasks] = useState<Task[]>([])
+  const [mainContent, setMainContent] = useState<'dashboard' | 'new' | 'settings'>('dashboard')
+  const [settingsSubTab, setSettingsSubTab] = useState<'profile' | 'password'>(settingsTab || 'profile')
 
   useEffect(() => {
     fetchTasks()
   }, [])
+
+  useEffect(() => {
+    if (showSettings) {
+      setMainContent('settings')
+      setSettingsSubTab(settingsTab || 'profile')
+    }
+  }, [showSettings, settingsTab])
 
   const fetchTasks = async () => {
     try {
@@ -50,13 +67,30 @@ export default function ModernDashboardLayout({ children }: { children: React.Re
 
   // 获取激活的侧边栏项
   const getActiveSidebarItem = () => {
-    if (pathname?.includes('/dashboard/settings')) return 'settings'
-    if (pathname?.includes('/dashboard/new')) return 'new'
-    if (pathname?.includes('/dashboard/edit')) return 'dashboard'
+    if (mainContent === 'settings') return 'settings'
+    if (mainContent === 'new') return 'new'
     return 'dashboard'
   }
 
   const activeItem = getActiveSidebarItem()
+
+  // 处理侧边栏导航
+  const handleSidebarNavigation = (content: 'dashboard' | 'new' | 'settings', subTab?: 'profile' | 'password') => {
+    setMainContent(content)
+    if (content === 'settings' && subTab) {
+      setSettingsSubTab(subTab)
+    }
+    setSidebarOpen(false)
+    
+    // 更新URL但不刷新页面
+    if (content === 'dashboard') {
+      window.history.pushState({}, '', '/dashboard')
+    } else if (content === 'new') {
+      window.history.pushState({}, '', '/dashboard/new')
+    } else if (content === 'settings') {
+      window.history.pushState({}, '', '/dashboard/settings')
+    }
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -94,51 +128,51 @@ export default function ModernDashboardLayout({ children }: { children: React.Re
 
           {/* 导航菜单 */}
           <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-            <Link
-              href="/dashboard"
-              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg ${
+            <button
+              onClick={() => handleSidebarNavigation('dashboard')}
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg w-full text-left ${
                 activeItem === 'dashboard'
                   ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-700'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
-              onClick={() => setSidebarOpen(false)}
+              onClickCapture={() => setSidebarOpen(false)}
             >
               <svg className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
               仪表板
-            </Link>
+            </button>
 
-            <Link
-              href="/dashboard/new"
-              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg ${
+            <button
+              onClick={() => handleSidebarNavigation('new')}
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg w-full text-left ${
                 activeItem === 'new'
                   ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-700'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
-              onClick={() => setSidebarOpen(false)}
+              onClickCapture={() => setSidebarOpen(false)}
             >
               <svg className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               新建任务
-            </Link>
+            </button>
 
-            <Link
-              href="/dashboard/settings"
-              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg ${
+            <button
+              onClick={() => handleSidebarNavigation('settings', 'profile')}
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg w-full text-left ${
                 activeItem === 'settings'
                   ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-700'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
-              onClick={() => setSidebarOpen(false)}
+              onClickCapture={() => setSidebarOpen(false)}
             >
               <svg className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               设置
-            </Link>
+            </button>
           </nav>
 
           {/* 退出按钮 */}
@@ -206,7 +240,61 @@ export default function ModernDashboardLayout({ children }: { children: React.Re
 
         {/* 页面内容 */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50">
-          {children}
+          {mainContent === 'dashboard' && children}
+          {mainContent === 'new' && (
+            <div className="max-w-3xl mx-auto">
+              <div className="bg-white shadow rounded-lg overflow-hidden">
+                <iframe 
+                  src="/dashboard/new" 
+                  className="w-full h-[80vh] border-0"
+                  title="新建任务"
+                ></iframe>
+              </div>
+            </div>
+          )}
+          {mainContent === 'settings' && (
+            <div className="max-w-4xl mx-auto">
+              <div className="space-y-6">
+                {/* 页面标题 */}
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">用户设置</h1>
+                  <p className="mt-1 text-gray-600">管理您的账户设置和安全选项</p>
+                </div>
+
+                {/* 标签页导航 */}
+                <div className="border-b border-gray-200">
+                  <nav className="-mb-px flex space-x-8">
+                    <button
+                      onClick={() => setSettingsSubTab('profile')}
+                      className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                        settingsSubTab === 'profile'
+                          ? 'border-indigo-500 text-indigo-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      个人信息
+                    </button>
+                    <button
+                      onClick={() => setSettingsSubTab('password')}
+                      className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                        settingsSubTab === 'password'
+                          ? 'border-indigo-500 text-indigo-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      修改密码
+                    </button>
+                  </nav>
+                </div>
+
+                {/* 内容区域 */}
+                <div className="bg-white shadow rounded-lg overflow-hidden">
+                  {settingsSubTab === 'profile' && session?.user && <ChangeEmailForm user={session.user} />}
+                  {settingsSubTab === 'password' && session?.user && <ChangePasswordForm user={session.user} />}
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -220,3 +308,6 @@ export default function ModernDashboardLayout({ children }: { children: React.Re
     </div>
   )
 }
+
+import ChangeEmailForm from './ChangeEmailForm'
+import ChangePasswordForm from './ChangePasswordForm'
