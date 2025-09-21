@@ -10,13 +10,15 @@
 
 确保你已经：
 - 注册了 Netlify 账户
-- 准备好了 PostgreSQL 数据库（推荐使用 Neon）
+- 准备好了 PostgreSQL 数据库（使用 Neon）
 - 生成了 NextAuth 所需的密钥
+- 注册了 cron-job.org 账户（用于定时任务触发）
 
-### 2. 数据库设置
+### 2. 数据库设置 (Neon)
 
-1. 在 Neon 或其他 PostgreSQL 服务上创建数据库
-2. 获取数据库连接字符串，格式如下：
+1. 在 [Neon](https://neon.tech/) 上创建账户
+2. 创建一个新的 PostgreSQL 项目
+3. 获取数据库连接字符串，格式如下：
    ```
    postgresql://username:password@host:port/database?sslmode=require
    ```
@@ -39,19 +41,20 @@ DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
 NEXTAUTH_SECRET=your-strong-secret-key-here
 NEXTAUTH_URL=https://your-site-name.netlify.app
 CRON_URL=https://your-site-name.netlify.app/api/cron
+CRON_SECRET=your-cron-secret-here
 ```
 
-### 5. 定时任务配置
+### 5. 定时任务配置 (cron-job.org)
 
-Netlify 提供了 Scheduled Functions 功能来执行定时任务：
+由于 Netlify 的 Scheduled Functions 免费版只支持每小时执行一次，我们使用 cron-job.org 来实现更频繁的定时任务：
 
-1. 系统默认使用 `netlify/functions/cron-job.js` 函数
-2. 默认每小时执行一次（@hourly）
-3. 该函数会调用你的应用的 `/api/cron` 端点
-
-如果需要更频繁的执行（如每分钟），可以：
-1. 使用外部服务如 cron-job.org
-2. 配置该服务定期调用你的 Netlify 站点的 `/api/cron` 端点
+1. 注册 [cron-job.org](https://cron-job.org/) 账户
+2. 创建一个新的 cron job
+3. 设置以下参数：
+   - URL: `https://your-site-name.netlify.app/api/cron`
+   - Schedule: 根据需要设置执行频率（例如每5分钟）
+   - Authorization header: `Bearer your-cron-secret-here`
+4. 保存并启用 cron job
 
 ### 6. 部署
 
@@ -63,7 +66,7 @@ Netlify 提供了 Scheduled Functions 功能来执行定时任务：
 
 ### 自定义定时频率
 
-如果需要修改定时任务的执行频率，可以编辑 `netlify/functions/cron-job.js` 文件中的 schedule 表达式：
+如果您想使用 Netlify 的内置定时功能，可以编辑 `netlify/functions/cron-job.js` 文件中的 schedule 表达式：
 
 ```javascript
 // 每小时执行
@@ -76,18 +79,15 @@ export default schedule("@hourly", handler);
 // export default schedule("*/5 * * * *", handler);
 ```
 
-### 更换数据库提供商
+### Neon 数据库优化
 
-如果不想使用 Neon，可以使用其他 PostgreSQL 服务：
-- Supabase
-- AWS RDS
-- Google Cloud SQL
-- Heroku Postgres
+Neon 提供了一些独特的功能，您可以利用：
 
-只需确保：
-1. 数据库可从 Netlify 访问
-2. 正确配置了连接字符串
-3. 防火墙规则允许连接
+1. 无服务器架构：自动扩展
+2. 分支功能：用于开发和测试
+3. 内置连接池：提高性能
+
+确保在连接字符串中使用适当的 SSL 模式。
 
 ## 故障排除
 
@@ -102,12 +102,14 @@ export default schedule("@hourly", handler);
 1. 验证 DATABASE_URL 是否正确
 2. 检查数据库是否允许来自 Netlify 的连接
 3. 确认数据库凭证是否正确
+4. 确保 Neon 项目处于活动状态
 
 ### 定时任务不执行
 
-1. 检查 Netlify Functions 是否正确部署
-2. 查看函数日志确认是否有错误
-3. 验证 CRON_URL 环境变量是否正确设置
+1. 检查 cron-job.org 的任务状态
+2. 验证 CRON_URL 环境变量是否正确设置
+3. 确认 CRON_SECRET 是否匹配
+4. 查看 Netlify 函数日志确认是否有错误
 
 ## 成本说明
 
@@ -117,7 +119,10 @@ export default schedule("@hourly", handler);
   - 125K 函数调用/月
   - 100 小时函数执行时间/月
 
-- PostgreSQL 数据库（以 Neon 为例）：
+- Neon PostgreSQL 数据库：
   - 免费套餐提供 1GB 存储和 10GB 传输/月
+
+- cron-job.org：
+  - 免费套餐提供每5分钟执行一次的定时任务
 
 对于中小型应用，免费套餐通常足够使用。

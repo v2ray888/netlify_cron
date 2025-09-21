@@ -9,7 +9,7 @@
 - 🎯 自定义访问频率（分钟级别）
 - 📊 任务执行历史记录
 - 👨‍💼 管理员面板
-- 🔄 自动定时执行（基于 Netlify Scheduled Functions）
+- 🔄 自动定时执行（基于 Netlify Scheduled Functions 或 cron-job.org）
 
 ## 技术栈
 
@@ -19,6 +19,7 @@
 - **认证**: NextAuth.js
 - **ORM**: Prisma
 - **部署**: Netlify
+- **定时任务**: cron-job.org
 
 ## 环境变量
 
@@ -27,6 +28,7 @@ DATABASE_URL="postgresql://..."
 NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="https://your-domain.netlify.app"
 CRON_URL="https://your-domain.netlify.app/api/cron"
+CRON_SECRET="your-cron-secret"
 ```
 
 ## 本地开发
@@ -53,15 +55,20 @@ npm run build
 3. 设置构建命令为 `npm run build`
 4. 设置发布目录为 `.next`
 5. 添加环境变量：
-   - DATABASE_URL
+   - DATABASE_URL (从 Neon 获取)
    - NEXTAUTH_SECRET
    - NEXTAUTH_URL
    - CRON_URL
+   - CRON_SECRET
 
 ### 定时任务配置：
 
-Netlify 使用 Scheduled Functions 来执行定时任务，默认每小时执行一次。
-如果需要更频繁的执行（如每分钟），建议使用外部服务如 cron-job.org 来触发 Netlify 函数。
+系统支持多种定时任务触发方式：
+1. Netlify Scheduled Functions (默认每小时执行)
+2. cron-job.org (推荐，可自定义频率)
+3. GitHub Actions (备用方案)
+
+推荐使用 [cron-job.org](https://cron-job.org/) 来实现更频繁的定时任务执行。
 
 ---
 

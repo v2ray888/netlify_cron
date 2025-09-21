@@ -3,13 +3,15 @@ import fetch from "node-fetch";
 
 export default schedule("@hourly", async () => {
   const CRON_URL = process.env.CRON_URL || "http://localhost:3000/api/cron";
+  const CRON_SECRET = process.env.CRON_SECRET || "default-secret";
   
   try {
     console.log("🚀 Netlify scheduled function triggering cron job...");
     const response = await fetch(CRON_URL, {
-      method: "GET",
+      method: "POST", // 使用 POST 方法以支持认证
       headers: {
-        "User-Agent": "Netlify-Scheduled-Function/1.0"
+        "User-Agent": "Netlify-Scheduled-Function/1.0",
+        "Authorization": `Bearer ${CRON_SECRET}`
       }
     });
     
