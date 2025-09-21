@@ -7,6 +7,7 @@ import Link from "next/link";
 export default function NewTaskPage() {
   const [name, setName] = useState("");
   const [targetUrl, setTargetUrl] = useState("");
+  const [httpMethod, setHttpMethod] = useState("GET");
   const [frequencyMinutes, setFrequencyMinutes] = useState(5);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function NewTaskPage() {
       const response = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, targetUrl, frequencyMinutes }),
+        body: JSON.stringify({ name, targetUrl, httpMethod, frequencyMinutes }),
       });
 
       if (!response.ok) {
@@ -63,6 +64,22 @@ export default function NewTaskPage() {
               onChange={(e) => setName(e.target.value)}
             />
           </div>
+          
+          <div>
+            <label htmlFor="httpMethod" className="block text-sm font-medium text-gray-700">HTTP 方法</label>
+            <select
+              id="httpMethod"
+              value={httpMethod}
+              onChange={(e) => setHttpMethod(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            >
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+          </div>
+          
           <div>
             <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-700">目标URL</label>
             <input
