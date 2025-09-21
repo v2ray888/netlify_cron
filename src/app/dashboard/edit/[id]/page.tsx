@@ -53,7 +53,8 @@ export default function EditTaskPage({ params }: { params: Promise<{ id: string 
         setBody(data.body || "");
         setFrequencyMinutes(data.frequencyMinutes);
         setIsEnabled(data.isEnabled);
-        setLogs(data.logs || []);
+        // 获取前30条执行日志
+        setLogs(data.logs?.slice(0, 30) || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load task");
       } finally {
@@ -123,7 +124,8 @@ export default function EditTaskPage({ params }: { params: Promise<{ id: string 
         const taskResponse = await fetch(`/api/tasks/${id}`);
         if (taskResponse.ok) {
           const data = await taskResponse.json();
-          setLogs(data.logs || []);
+          // 获取前30条执行日志
+          setLogs(data.logs?.slice(0, 30) || []);
         }
       } else {
         const errorData = await response.json();
@@ -298,7 +300,7 @@ export default function EditTaskPage({ params }: { params: Promise<{ id: string 
 
         {/* 执行记录 */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">执行记录</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">执行记录 (最近30条)</h2>
           {logs.length === 0 ? (
             <p className="text-gray-500">暂无执行记录</p>
           ) : (

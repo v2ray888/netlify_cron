@@ -22,7 +22,7 @@ export async function GET(
       include: {
         logs: {
           orderBy: { executedAt: 'desc' },
-          take: 50
+          take: 50 // 获取最近50条日志
         },
         notifications: true
       }
