@@ -2,8 +2,8 @@ name: 定时任务触发器
 
 on:
   schedule:
-    # 每5分钟执行一次 (UTC时间)
-    - cron: '*/5 * * * *'
+    # 每1分钟执行一次 (UTC时间)
+    - cron: '* * * * *'
   workflow_dispatch: # 允许手动触发
 
 jobs:
@@ -24,3 +24,4 @@ jobs:
       run: |
         echo "执行时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         echo "北京时间: $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S CST')"
+        echo "执行频率: 每1分钟"
