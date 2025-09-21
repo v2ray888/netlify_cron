@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import UserSettingsLayout from '@/components/UserSettingsLayout'
+import UserSettingsTabs from '@/components/UserSettingsTabs'
 
 export default async function UserSettingsPage() {
   const session = await getServerSession(authOptions)
@@ -12,7 +12,7 @@ export default async function UserSettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <UserSettingsLayout user={session.user} />
+      <UserSettingsTabs user={session.user} />
     </div>
   )
 }
