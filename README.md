@@ -1,77 +1,158 @@
-# 定时任务管理系统
+# 自动化定时任务平台
 
-一个基于 Next.js 15 的定时任务管理系统，支持用户注册登录后添加定时访问网站的任务。
+一个基于 Next.js 15 和 Netlify 的定时任务管理系统，支持创建、管理和监控定时 HTTP 请求任务。
 
 ## 功能特性
 
-- 🔐 用户注册和登录系统
-- ⏰ 创建和管理定时任务
-- 🎯 自定义访问频率（分钟级别）
-- 📊 任务执行历史记录
-- 👨‍💼 管理员面板
-- 🔄 自动定时执行（基于 Netlify Scheduled Functions 或 cron-job.org）
+- ✅ 创建和管理定时任务
+- ✅ 支持 Cron 表达式和简单频率设置
+- ✅ 任务执行日志和统计
+- ✅ 用户认证和权限管理
+- ✅ 任务通知系统
+- ✅ 系统状态监控
+- ✅ 响应式设计，支持移动端
 
 ## 技术栈
 
-- **前端**: Next.js 15, React 19, TypeScript, Tailwind CSS
-- **后端**: Next.js API Routes
-- **数据库**: PostgreSQL (Neon)
-- **认证**: NextAuth.js
+- **前端框架**: Next.js 15 (App Router)
+- **UI 框架**: Tailwind CSS + Headless UI
+- **后端**: Next.js API Routes + Netlify Functions
+- **数据库**: PostgreSQL (NeonDB)
 - **ORM**: Prisma
+- **认证**: NextAuth.js
 - **部署**: Netlify
-- **定时任务**: cron-job.org
 
-## 环境变量
+## 快速开始
 
-```env
-DATABASE_URL="postgresql://neondb_owner:npg_9rmeMWP3BZOg@ep-cold-haze-adtxrbhk-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-NEXTAUTH_SECRET="your-secret-key"
-NEXTAUTH_URL="https://zidonghua.netlify.app"
-CRON_URL="https://zidonghua.netlify.app/api/cron"
-CRON_SECRET="your-cron-secret"
-```
-
-## 本地开发
+### 1. 环境准备
 
 ```bash
+# 克隆项目
+git clone <repository-url>
+cd netlify_cron
+
 # 安装依赖
 npm install
-
-# 运行开发服务器
-npm run dev
-
-# 构建项目
-npm run build
 ```
 
-## 部署
+### 2. 环境变量配置
 
-项目已配置自动部署到 Netlify，推送到 master 分支即可触发部署。
+创建 `.env.local` 文件并配置以下环境变量：
 
-### Netlify 部署步骤：
+```env
+# 数据库连接
+DATABASE_URL=postgresql://username:password@host:port/database
 
-1. 在 Netlify 上创建新站点
-2. 连接到你的 Git 仓库
-3. 设置构建命令为 `npm run build`
-4. 设置发布目录为 `.next`
-5. 添加环境变量：
-   - DATABASE_URL: `postgresql://neondb_owner:npg_9rmeMWP3BZOg@ep-cold-haze-adtxrbhk-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
-   - NEXTAUTH_SECRET: 生成一个强密钥
-   - NEXTAUTH_URL: `https://zidonghua.netlify.app`
-   - CRON_URL: `https://zidonghua.netlify.app/api/cron`
-   - CRON_SECRET: 生成一个用于 cron 认证的密钥
+# NextAuth 配置
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_secret_key
 
-### 定时任务配置：
+# NeonDB 连接示例
+# DATABASE_URL=postgresql://neondb_owner:your_password@ep-your-instance-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
+```
 
-系统支持多种定时任务触发方式：
-1. Netlify Scheduled Functions (默认每小时执行)
-2. cron-job.org (推荐，可自定义频率)
-3. GitHub Actions (备用方案)
+### 3. 数据库初始化
 
-推荐使用 [cron-job.org](https://cron-job.org/) 来实现更频繁的定时任务执行。
+```bash
+# 运行数据库迁移
+npm run db:init
 
-访问地址：https://zidonghua.netlify.app
+# 或者使用 Prisma 命令
+npx prisma migrate dev
 
----
+# 查看数据库结构
+npm run db:studio
+# 或者
+npx prisma studio
+```
 
-最后更新: 2025/9/21
+✅ **数据库表已成功创建**:
+- User (用户表)
+- Task (任务表)
+- TaskLog (任务日志表)
+- TaskNotification (任务通知表)
+- SystemStats (系统统计表)
+
+### 4. 开发
+
+```bash
+# 启动开发服务器
+npm run dev
+```
+
+### 5. 构建和部署
+
+```bash
+# 构建生产版本
+npm run build
+
+# 启动生产服务器
+npm run start
+```
+
+## Netlify 部署
+
+### 自动部署
+
+1. 将代码推送到 GitHub
+2. 在 Netlify 上连接仓库并配置构建设置
+3. 设置环境变量 (DATABASE_URL, NEXTAUTH_URL, NEXTAUTH_SECRET)
+4. 触发部署
+
+### 数据库迁移
+
+Netlify 部署时会自动执行数据库迁移。如果需要手动初始化数据库，可以运行：
+
+```bash
+npm run db:init
+```
+
+这将应用所有必要的数据库迁移，创建所需的表结构。
+
+## 定时任务配置
+
+本系统使用 [cron-job.org](https://cron-job.org/) 作为外部定时任务触发器：
+
+1. 在 cron-job.org 创建账户
+2. 创建新的 cron job
+3. 设置 URL 为: `https://your-site.netlify.app/api/cron`
+4. 配置执行频率
+5. 在 Authorization header 中添加: `Bearer your-cron-secret-here`
+6. 保存设置
+
+## 目录结构
+
+```
+├── app/                 # Next.js 15 App Router
+│   ├── api/            # API 路由
+│   ├── auth/           # 认证相关页面
+│   ├── dashboard/      # 仪表板页面
+│   └── tasks/          # 任务管理页面
+├── components/         # React 组件
+├── lib/                # 工具库和业务逻辑
+├── prisma/             # Prisma 数据库 schema 和迁移
+├── netlify/functions/  # Netlify Functions
+└── public/             # 静态资源
+```
+
+## 故障排除
+
+### 数据库连接问题
+
+如果遇到数据库连接问题，请检查：
+
+1. DATABASE_URL 环境变量是否正确配置
+2. NeonDB 实例是否正在运行
+3. 网络连接是否正常
+
+### 注册/登录问题
+
+如果注册或登录失败，请检查：
+
+1. 数据库表是否已创建 (运行 `npm run db:init`)
+2. NEXTAUTH_SECRET 是否已设置
+3. 控制台错误信息
+
+## 许可证
+
+MIT
