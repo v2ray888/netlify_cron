@@ -89,8 +89,7 @@ export async function POST(request: NextRequest) {
     console.error('Failed to create task:', error)
     return NextResponse.json({ 
       error: 'Failed to create task', 
-      details: error instanceof Error ? error.message : 'Unknown error',
-      userId: session?.user?.id
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }
