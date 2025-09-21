@@ -78,14 +78,7 @@ export default function CronDashboard() {
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success': return 'text-green-600 bg-green-50'
-      case 'failed': return 'text-red-600 bg-red-50'
-      case 'timeout': return 'text-yellow-600 bg-yellow-50'
-      default: return 'text-gray-600 bg-gray-50'
-    }
-  }
+
 
   const formatDuration = (ms: number) => {
     if (ms < 1000) return `${ms}ms`

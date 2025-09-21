@@ -5,8 +5,9 @@ import prisma from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -15,7 +16,7 @@ export async function GET(
 
     const task = await prisma.task.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       },
       include: {
@@ -40,8 +41,9 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -53,7 +55,7 @@ export async function PATCH(
     // 验证任务所有权
     const existingTask = await prisma.task.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       }
     })
@@ -63,13 +65,13 @@ export async function PATCH(
     }
 
     // 如果更新了频率，重新计算下次执行时间
-    let updateData = { ...body }
+    const updateData = { ...body }
     if (body.frequencyMinutes && body.frequencyMinutes !== existingTask.frequencyMinutes) {
       updateData.nextExecutionAt = new Date(Date.now() + body.frequencyMinutes * 60 * 1000)
     }
 
     const task = await prisma.task.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData
     })
 
@@ -82,8 +84,9 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -93,7 +96,7 @@ export async function DELETE(
     // 验证任务所有权
     const existingTask = await prisma.task.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       }
     })
@@ -103,7 +106,7 @@ export async function DELETE(
     }
 
     await prisma.task.delete({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     return NextResponse.json({ message: 'Task deleted successfully' })
