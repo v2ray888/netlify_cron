@@ -37,16 +37,19 @@ export default function AdminPage() {
 
   // Pagination for tasks
   const [taskPage, setTaskPage] = useState(1);
-  const [taskPageSize] = useState(10);
+  const [taskPageSize] = useState(20);
   const [totalTasksCount, setTotalTasksCount] = useState(0);
   const totalTaskPages = Math.ceil(totalTasksCount / taskPageSize);
 
   const fetchUsers = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/users");
-      if (!response.ok) throw new Error("Failed to fetch users");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to fetch users");
+      }
       const data = await response.json();
-      setUsers(data.users);
+      setUsers(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch users");
     }
@@ -56,7 +59,10 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const response = await fetch(`/api/admin/tasks?page=${taskPage}&pageSize=${taskPageSize}`);
-      if (!response.ok) throw new Error("Failed to fetch tasks");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to fetch tasks");
+      }
       const data = await response.json();
       setTasks(data.tasks);
       setTotalTasksCount(data.totalTasks);
@@ -88,7 +94,10 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: newRole }),
       });
-      if (!response.ok) throw new Error("Failed to update role");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update role");
+      }
       setEditingUser(null);
       fetchUsers();
     } catch (err) {
@@ -100,7 +109,10 @@ export default function AdminPage() {
     if (!window.confirm("确定要删除这个用户吗？这将删除用户及其所有任务。")) return;
     try {
       const response = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Failed to delete user");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete user");
+      }
       fetchUsers();
       fetchTasks(); // Refresh tasks as they might have been deleted
     } catch (err) {
@@ -137,16 +149,22 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td className="px-6 py-4">{user.email}</td>
-                    <td className="px-6 py-4">{user.role === 'admin' ? '管理员' : '用户'}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button onClick={() => { setEditingUser(user); setNewRole(user.role); }} className="text-indigo-600 hover:text-indigo-900">编辑角色</button>
-                      <button onClick={() => handleDeleteUser(user.id)} className="ml-4 text-red-600 hover:text-red-900">删除</button>
-                    </td>
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <tr key={user.id}>
+                      <td className="px-6 py-4">{user.email}</td>
+                      <td className="px-6 py-4">{user.role === 'admin' ? '管理员' : '用户'}</td>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => { setEditingUser(user); setNewRole(user.role); }} className="text-indigo-600 hover:text-indigo-900">编辑角色</button>
+                        <button onClick={() => handleDeleteUser(user.id)} className="ml-4 text-red-600 hover:text-red-900">删除</button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-gray-500">暂无用户。</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -184,8 +202,8 @@ export default function AdminPage() {
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.user.email}</td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.lastExecutedAt ? new Date(task.lastExecutedAt).toLocaleString() : "未执行"}</td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.nextExecutionAt ? new Date(task.nextExecutionAt).toLocaleString() : "未安排"}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.lastExecutedAt ? new Date(task.lastExecutedAt).toLocaleString('zh-CN') : "未执行"}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{task.nextExecutionAt ? new Date(task.nextExecutionAt).toLocaleString('zh-CN') : "未安排"}</td>
                       </tr>
                     ))
                   ) : (

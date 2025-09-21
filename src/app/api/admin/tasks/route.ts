@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1');
-  const pageSize = parseInt(searchParams.get('pageSize') || '5');
+  const pageSize = parseInt(searchParams.get('pageSize') || '20'); // Increase from 5 to 20
   const skip = (page - 1) * pageSize;
 
   try {
