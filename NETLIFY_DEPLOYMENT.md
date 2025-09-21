@@ -16,12 +16,10 @@
 
 ### 2. 数据库设置 (Neon)
 
-1. 在 [Neon](https://neon.tech/) 上创建账户
-2. 创建一个新的 PostgreSQL 项目
-3. 获取数据库连接字符串，格式如下：
-   ```
-   postgresql://username:password@host:port/database?sslmode=require
-   ```
+您已经获取了 Neon 数据库连接信息：
+```
+postgresql://neondb_owner:npg_9rmeMWP3BZOg@ep-cold-haze-adtxrbhk-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+```
 
 ### 3. Netlify 站点创建
 
@@ -37,10 +35,10 @@
 在 Netlify 站点设置中添加以下环境变量：
 
 ```
-DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
+DATABASE_URL=postgresql://neondb_owner:npg_9rmeMWP3BZOg@ep-cold-haze-adtxrbhk-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 NEXTAUTH_SECRET=your-strong-secret-key-here
-NEXTAUTH_URL=https://your-site-name.netlify.app
-CRON_URL=https://your-site-name.netlify.app/api/cron
+NEXTAUTH_URL=https://zidonghua.netlify.app
+CRON_URL=https://zidonghua.netlify.app/api/cron
 CRON_SECRET=your-cron-secret-here
 ```
 
@@ -51,7 +49,7 @@ CRON_SECRET=your-cron-secret-here
 1. 注册 [cron-job.org](https://cron-job.org/) 账户
 2. 创建一个新的 cron job
 3. 设置以下参数：
-   - URL: `https://your-site-name.netlify.app/api/cron`
+   - URL: `https://zidonghua.netlify.app/api/cron`
    - Schedule: 根据需要设置执行频率（例如每5分钟）
    - Authorization header: `Bearer your-cron-secret-here`
 4. 保存并启用 cron job
@@ -60,7 +58,7 @@ CRON_SECRET=your-cron-secret-here
 
 1. 推送代码到 master 分支
 2. Netlify 会自动开始构建和部署
-3. 部署完成后，访问你的站点 URL
+3. 部署完成后，访问你的站点 URL: https://zidonghua.netlify.app
 
 ## 高级配置
 

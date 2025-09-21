@@ -24,10 +24,10 @@
 ## 环境变量
 
 ```env
-DATABASE_URL="postgresql://..."
+DATABASE_URL="postgresql://neondb_owner:npg_9rmeMWP3BZOg@ep-cold-haze-adtxrbhk-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 NEXTAUTH_SECRET="your-secret-key"
-NEXTAUTH_URL="https://your-domain.netlify.app"
-CRON_URL="https://your-domain.netlify.app/api/cron"
+NEXTAUTH_URL="https://zidonghua.netlify.app"
+CRON_URL="https://zidonghua.netlify.app/api/cron"
 CRON_SECRET="your-cron-secret"
 ```
 
@@ -55,11 +55,11 @@ npm run build
 3. 设置构建命令为 `npm run build`
 4. 设置发布目录为 `.next`
 5. 添加环境变量：
-   - DATABASE_URL (从 Neon 获取)
-   - NEXTAUTH_SECRET
-   - NEXTAUTH_URL
-   - CRON_URL
-   - CRON_SECRET
+   - DATABASE_URL: `postgresql://neondb_owner:npg_9rmeMWP3BZOg@ep-cold-haze-adtxrbhk-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
+   - NEXTAUTH_SECRET: 生成一个强密钥
+   - NEXTAUTH_URL: `https://zidonghua.netlify.app`
+   - CRON_URL: `https://zidonghua.netlify.app/api/cron`
+   - CRON_SECRET: 生成一个用于 cron 认证的密钥
 
 ### 定时任务配置：
 
@@ -69,6 +69,8 @@ npm run build
 3. GitHub Actions (备用方案)
 
 推荐使用 [cron-job.org](https://cron-job.org/) 来实现更频繁的定时任务执行。
+
+访问地址：https://zidonghua.netlify.app
 
 ---
 
