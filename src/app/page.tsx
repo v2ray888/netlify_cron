@@ -15,25 +15,51 @@ export default function HomePage() {
 
   useEffect(() => {
     // 检查应用健康状态
-    fetch('/api/health')
-      .then(async res => {
-        // 检查响应内容类型
-        const contentType = res.headers.get('content-type');
+    const checkHealth = async () => {
+      try {
+        // 添加超时控制
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+        
+        const response = await fetch('/api/health', {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        // 检查响应状态
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        // 检查内容类型
+        const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          // 如果不是JSON，可能是HTML错误页面
-          const text = await res.text();
+          const text = await response.text();
           throw new Error(`Expected JSON but got ${contentType || 'unknown type'}. Response: ${text.substring(0, 200)}`);
         }
-        return res.json();
-      })
-      .then(data => setHealthStatus(data))
-      .catch(err => {
-        console.error('Health check failed:', err);
+        
+        const data = await response.json();
+        setHealthStatus(data);
+      } catch (error: any) {
+        console.error('Health check failed:', error);
+        
+        // 处理不同类型的错误
+        let errorMessage = '未知错误';
+        if (error.name === 'AbortError') {
+          errorMessage = '请求超时';
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+        
         setHealthStatus({ 
           status: 'error', 
-          message: err.message || '无法连接到健康检查服务'
+          message: errorMessage
         });
-      });
+      }
+    };
+
+    checkHealth();
   }, []);
 
   if (status === "loading") {

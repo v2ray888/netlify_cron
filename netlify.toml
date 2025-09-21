@@ -8,17 +8,13 @@
 [functions]
   directory = "netlify/functions"
 
-# 修复 API 路由重定向问题
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-  # 仅当函数存在时才重定向
-  condition = { "function" = ":splat" }
+# Next.js 会处理自己的 API 路由，不需要重定向到 Netlify 函数
+# 只需要确保静态资源和页面路由正确处理
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  # 排除 API 路由
+  # 排除 API 路由和静态资源
   condition = { "!path" = "/api/*" }
+  force = false
