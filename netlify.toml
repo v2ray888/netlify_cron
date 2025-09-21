@@ -17,5 +17,4 @@
   to = "/index.html"
   status = 200
   # 排除 API 路由和 Netlify 函数
-  condition = { "!path" = "/api/*" }
-  condition = { "!path" = "/.netlify/*" }
+  condition = { "!path" = "/api/*", "!path" = "/.netlify/*" }
