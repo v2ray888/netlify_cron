@@ -69,7 +69,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      if (session.user?.role === "admin") {
+      if (session?.user?.role === "admin") {
         fetchUsers();
         fetchTasks();
       } else {
@@ -78,7 +78,7 @@ export default function AdminPage() {
     } else if (status === "unauthenticated") {
       router.push("/auth/signin");
     }
-  }, [status, session, router, fetchUsers, fetchTasks]);
+  }, [status, session?.user?.role, router, fetchUsers, fetchTasks]);
 
   const handleUpdateRole = async () => {
     if (!editingUser) return;
@@ -108,7 +108,7 @@ export default function AdminPage() {
     }
   };
 
-  if (status === "loading" || (status === "authenticated" && session.user.role !== 'admin')) {
+  if (status === "loading" || (status === "authenticated" && session?.user?.role !== 'admin')) {
     return <div className="flex min-h-screen items-center justify-center">加载中或重定向...</div>;
   }
 
