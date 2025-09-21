@@ -8,14 +8,17 @@
 [functions]
   directory = "netlify/functions"
 
+# 修复 API 路由重定向问题
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
+  # 仅当函数存在时才重定向
+  condition = { "function" = ":splat" }
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  # 排除 API 路由和静态资源
+  # 排除 API 路由
   condition = { "!path" = "/api/*" }

@@ -16,9 +16,24 @@ export default function HomePage() {
   useEffect(() => {
     // 检查应用健康状态
     fetch('/api/health')
-      .then(res => res.json())
+      .then(async res => {
+        // 检查响应内容类型
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          // 如果不是JSON，可能是HTML错误页面
+          const text = await res.text();
+          throw new Error(`Expected JSON but got ${contentType || 'unknown type'}. Response: ${text.substring(0, 200)}`);
+        }
+        return res.json();
+      })
       .then(data => setHealthStatus(data))
-      .catch(err => setHealthStatus({ status: 'error', message: err.message }));
+      .catch(err => {
+        console.error('Health check failed:', err);
+        setHealthStatus({ 
+          status: 'error', 
+          message: err.message || '无法连接到健康检查服务'
+        });
+      });
   }, []);
 
   if (status === "loading") {
