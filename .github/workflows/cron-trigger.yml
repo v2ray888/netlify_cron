@@ -14,9 +14,7 @@ jobs:
     - name: 触发定时任务
       run: |
         echo "正在触发定时任务执行..."
-        curl -X POST "${{ secrets.VERCEL_CRON_URL }}" \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+        curl -X GET "${{ secrets.VERCEL_CRON_URL }}" \
           --max-time 30 \
           --retry 3 \
           --retry-delay 5
