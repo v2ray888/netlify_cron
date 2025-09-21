@@ -41,15 +41,17 @@ export default function HomePage() {
         
         const data = await response.json();
         setHealthStatus(data);
-      } catch (error: any) {
+      } catch (error) {
         console.error('Health check failed:', error);
         
         // 处理不同类型的错误
         let errorMessage = '未知错误';
-        if (error.name === 'AbortError') {
-          errorMessage = '请求超时';
-        } else if (error instanceof Error) {
-          errorMessage = error.message;
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            errorMessage = '请求超时';
+          } else {
+            errorMessage = error.message;
+          }
         }
         
         setHealthStatus({ 

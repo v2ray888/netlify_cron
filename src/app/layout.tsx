@@ -31,9 +31,9 @@ export default async function RootLayout({
   try {
     // 尝试获取会话，但如果失败则继续
     session = await getServerSession(authOptions);
-  } catch (error: any) {
+  } catch (error) {
     // 特别处理 JWT 解密错误
-    if (error?.name === 'JWEDecryptionFailed') {
+    if (error instanceof Error && error.name === 'JWEDecryptionFailed') {
       console.warn('JWT decryption failed - this is expected when secret changes');
       // 继续使用 null 会话，让客户端重新认证
       session = null;
