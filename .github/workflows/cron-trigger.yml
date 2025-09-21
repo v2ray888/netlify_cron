@@ -1,9 +1,9 @@
-name: 定时任务触发器
+name: 定时任务触发器 (已禁用)
 
 on:
-  schedule:
-    # 每1分钟执行一次 (UTC时间)
-    - cron: '* * * * *'
+  # schedule:
+  #   # 每1分钟执行一次 (UTC时间) - 已禁用，使用 Cron-job.org 替代
+  #   - cron: '* * * * *'
   workflow_dispatch: # 允许手动触发
 
 jobs:
