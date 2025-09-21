@@ -1,7 +1,7 @@
-# GitHub Actions 定时任务设置指南
+# GitHub Actions 定时任务设置指南 (Netlify 版本)
 
 ## 概述
-由于 Vercel 免费账户只支持每日 cron 任务，我们使用 GitHub Actions 来实现每5分钟执行一次的定时任务。
+由于 Netlify 的 Scheduled Functions 免费账户只支持每小时 cron 任务，我们使用 GitHub Actions 来实现每5分钟执行一次的定时任务。
 
 ## 设置步骤
 
@@ -10,9 +10,9 @@
 前往你的 GitHub 仓库 → Settings → Secrets and variables → Actions，添加以下 secrets：
 
 #### 必需的 Secrets：
-- **`VERCEL_CRON_URL`**: 你的 Vercel 应用的 cron API 地址
+- **`NETLIFY_CRON_URL`**: 你的 Netlify 应用的 cron API 地址
   ```
-  https://ds.121858.xyz/api/cron
+  https://your-site-name.netlify.app/api/cron
   ```
 
 - **`CRON_SECRET`**: 用于认证的密钥（自己设置一个强密码）
@@ -20,9 +20,9 @@
   例如: my-super-secret-cron-key-2024
   ```
 
-### 2. 在 Vercel 中设置环境变量
+### 2. 在 Netlify 中设置环境变量
 
-前往 Vercel Dashboard → 你的项目 → Settings → Environment Variables，添加：
+前往 Netlify Dashboard → 你的项目 → Settings → Environment Variables，添加：
 
 - **`CRON_SECRET`**: 与 GitHub Secrets 中设置的相同值
 
@@ -31,7 +31,7 @@
 已创建的 `.github/workflows/cron-trigger.yml` 文件会：
 - 每5分钟执行一次（UTC 时间）
 - 调用你的 `/api/cron` 端点
-- 使用 Bearer token 认证
+- 使用简单的认证机制
 - 支持手动触发
 
 ### 4. 验证设置
@@ -44,7 +44,7 @@
 ## 工作流特性
 
 - ⏰ **每5分钟执行**: `*/5 * * * *`
-- 🔒 **安全认证**: Bearer token 保护
+- 🔒 **安全认证**: 简单的 token 保护
 - 🔄 **自动重试**: 失败时重试3次
 - 📝 **详细日志**: 记录执行时间和状态
 - 🎯 **手动触发**: 支持在 Actions 页面手动运行
@@ -60,13 +60,13 @@
 ### 如果任务没有执行：
 1. 检查 GitHub Actions 页面是否有错误
 2. 确认 Secrets 设置正确
-3. 检查 Vercel 环境变量
-4. 查看 Vercel 函数日志
+3. 检查 Netlify 环境变量
+4. 查看 Netlify 函数日志
 
 ### 如果认证失败：
-1. 确保 `CRON_SECRET` 在 GitHub 和 Vercel 中完全一致
+1. 确保 `CRON_SECRET` 在 GitHub 和 Netlify 中完全一致
 2. 检查 secret 名称拼写
-3. 重新部署 Vercel 应用
+3. 重新部署 Netlify 应用
 
 ## 成本说明
 
@@ -75,4 +75,4 @@
 - ✅ **每次执行约 10 秒**: 每月约 1440 分钟
 - ✅ **完全免费**: 在免费额度内
 
-这样你就可以绕过 Vercel 的 cron 限制，实现真正的每5分钟定时任务！🚀
+这样你就可以绕过 Netlify 的 cron 限制，实现真正的每5分钟定时任务！🚀

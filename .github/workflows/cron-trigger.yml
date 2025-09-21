@@ -1,9 +1,9 @@
-name: 定时任务触发器 (已禁用)
+name: 定时任务触发器 (Netlify 版本)
 
 on:
-  # schedule:
-  #   # 每1分钟执行一次 (UTC时间) - 已禁用，使用 Cron-job.org 替代
-  #   - cron: '* * * * *'
+  schedule:
+    # 每5分钟执行一次 (UTC时间)
+    - cron: '*/5 * * * *'
   workflow_dispatch: # 允许手动触发
 
 jobs:
@@ -14,7 +14,14 @@ jobs:
     - name: 触发定时任务
       run: |
         echo "正在触发定时任务执行..."
-        curl -X GET "${{ secrets.VERCEL_CRON_URL }}" \
+        # 支持 Netlify 和 Vercel
+        if [ "${{ secrets.NETLIFY_CRON_URL }}" != "" ]; then
+          CRON_URL="${{ secrets.NETLIFY_CRON_URL }}"
+        else
+          CRON_URL="${{ secrets.VERCEL_CRON_URL }}"
+        fi
+        
+        curl -X GET "$CRON_URL" \
           --max-time 30 \
           --retry 3 \
           --retry-delay 5
@@ -24,4 +31,4 @@ jobs:
       run: |
         echo "执行时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         echo "北京时间: $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S CST')"
-        echo "执行频率: 每1分钟"
+        echo "执行频率: 每5分钟"

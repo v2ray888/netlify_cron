@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic' // 确保在 Netlify 上动态执行
+
 export async function GET() {
   const response = NextResponse.json({
     success: true,
@@ -8,7 +10,15 @@ export async function GET() {
     timestamp: new Date().toISOString()
   });
   
-  executeCronJob().catch(console.error);
+  // 在 Netlify 环境中，我们不使用异步执行
+  // 而是直接执行任务以确保在函数超时前完成
+  if (process.env.NETLIFY) {
+    await executeCronJob();
+  } else {
+    // 在 Vercel 或其他平台上保持原有行为
+    executeCronJob().catch(console.error);
+  }
+  
   return response;
 }
 
@@ -16,11 +26,22 @@ export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET || 'default-secret';
   
-  if (authHeader && authHeader.startsWith('Bearer ') && authHeader.slice(7) !== cronSecret) {
-    return NextResponse.json({ message: '未授权访问' }, { status: 401 });
+  // 在 Netlify 环境中，可能需要不同的认证方式
+  if (process.env.NETLIFY) {
+    // Netlify 环境下可以使用不同的认证机制
+    // 例如检查 Netlify 特定的头信息
+    const netlifyCronHeader = request.headers.get('x-netlify-cron-secret');
+    if (netlifyCronHeader && netlifyCronHeader !== cronSecret) {
+      return NextResponse.json({ message: '未授权访问' }, { status: 401 });
+    }
+  } else {
+    // 原有的认证方式
+    if (authHeader && authHeader.startsWith('Bearer ') && authHeader.slice(7) !== cronSecret) {
+      return NextResponse.json({ message: '未授权访问' }, { status: 401 });
+    }
   }
 
-  return GET();
+  return await GET();
 }
 
 async function executeCronJob() {
@@ -44,13 +65,18 @@ async function executeCronJob() {
       try {
         console.log(`⚡ Executing task: ${task.name} (${task.targetUrl})`)
         
+        // Netlify 函数有执行时间限制，需要设置合理的超时
+        const timeout = Math.min(task.timeoutSeconds * 1000, 9000); // 最大9秒
+        
         const startTime = Date.now()
         const response = await fetch(task.targetUrl, {
-          method: 'GET',
+          method: task.httpMethod,
           headers: {
-            'User-Agent': 'Cron-Job-Service/1.0'
+            'User-Agent': 'Cron-Job-Service/1.0',
+            ...(task.headers as Record<string, string> || {})
           },
-          signal: AbortSignal.timeout(30000)
+          body: task.body || undefined,
+          signal: AbortSignal.timeout(timeout)
         })
         
         const endTime = Date.now()
@@ -74,7 +100,13 @@ async function executeCronJob() {
           where: { id: task.id },
           data: {
             lastExecutedAt: new Date(),
-            nextExecutionAt: nextExecution
+            nextExecutionAt: nextExecution,
+            successCount: {
+              increment: success ? 1 : 0
+            },
+            failureCount: {
+              increment: success ? 0 : 1
+            }
           }
         })
 
@@ -96,7 +128,10 @@ async function executeCronJob() {
           where: { id: task.id },
           data: {
             lastExecutedAt: new Date(),
-            nextExecutionAt: nextExecution
+            nextExecutionAt: nextExecution,
+            failureCount: {
+              increment: 1
+            }
           }
         })
       }
