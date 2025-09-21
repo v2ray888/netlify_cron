@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { executeTask } from '@/lib/taskExecutor'; // Import the new utility function
 
 async function executeCronJob(request?: Request) {
+  const startTime = Date.now();
+  
   try {
     // 如果有请求对象，检查认证
     if (request) {
@@ -15,27 +17,40 @@ async function executeCronJob(request?: Request) {
     }
 
     const now = new Date();
-    const tasksToExecute = await prisma.task.findMany({
-      where: {
-        isEnabled: true,
-        OR: [
-          { nextExecutionAt: { lte: now } },
-          { nextExecutionAt: null }, // Execute tasks that haven't been run yet
-        ],
-      },
+    
+    // 快速响应：先返回成功状态，然后异步执行任务
+    const response = NextResponse.json({ 
+      message: 'Cron job started successfully', 
+      timestamp: now.toISOString(),
+      status: 'processing'
+    }, { status: 200 });
+
+    // 异步执行任务，不阻塞响应
+    setImmediate(async () => {
+      try {
+        const tasksToExecute = await prisma.task.findMany({
+          where: {
+            isEnabled: true,
+            OR: [
+              { nextExecutionAt: { lte: now } },
+              { nextExecutionAt: null }, // Execute tasks that haven't been run yet
+            ],
+          },
+        });
+
+        console.log(`Found ${tasksToExecute.length} tasks to execute at ${now.toISOString()}`);
+
+        for (const task of tasksToExecute) {
+          await executeTask(task.id); // Call the refactored executeTask function
+        }
+        
+        console.log(`Cron job completed in ${Date.now() - startTime}ms`);
+      } catch (error) {
+        console.error('Async cron job failed:', error);
+      }
     });
 
-    console.log(`Found ${tasksToExecute.length} tasks to execute at ${now.toISOString()}`);
-
-    for (const task of tasksToExecute) {
-      await executeTask(task.id); // Call the refactored executeTask function
-    }
-
-    return NextResponse.json({ 
-      message: 'Cron job executed successfully', 
-      executedTasks: tasksToExecute.length,
-      timestamp: now.toISOString()
-    }, { status: 200 });
+    return response;
   } catch (error) {
     console.error('Cron job failed:', error);
     return NextResponse.json({ 
