@@ -18,7 +18,6 @@ interface UserSettingsLayoutProps {
 
 export default function UserSettingsLayout({ user }: UserSettingsLayoutProps) {
   const pathname = usePathname()
-  const [activeTab, setActiveTab] = useState('profile')
 
   // 获取当前激活的标签页
   const getActiveTab = () => {
@@ -80,7 +79,6 @@ export default function UserSettingsLayout({ user }: UserSettingsLayoutProps) {
                       ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-700' 
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
-                  onClick={() => setActiveTab('profile')}
                 >
                   <div className="flex items-center">
                     <svg className="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -96,7 +94,6 @@ export default function UserSettingsLayout({ user }: UserSettingsLayoutProps) {
                       ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-700' 
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
-                  onClick={() => setActiveTab('password')}
                 >
                   <div className="flex items-center">
                     <svg className="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

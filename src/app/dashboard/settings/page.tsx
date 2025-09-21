@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import UserSettingsLayout from '@/components/UserSettingsLayout'
 
 export default async function UserSettingsPage() {
   const session = await getServerSession(authOptions)
@@ -9,6 +10,9 @@ export default async function UserSettingsPage() {
     redirect('/auth/signin')
   }
 
-  // 重定向到默认设置页面
-  redirect('/dashboard/settings/profile')
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <UserSettingsLayout user={session.user} />
+    </div>
+  )
 }
